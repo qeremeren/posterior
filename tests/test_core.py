@@ -137,7 +137,8 @@ def test_audit_drops_snapshot_columns_from_the_data_alone(leaky_market, monkeypa
     monkeypatch.delenv("TABPFN_TOKEN", raising=False)
     monkeypatch.setenv("POSTERIOR_TABPFN", "client")
     # A decision model that suspects nothing: the label-power check must catch the leaks by itself.
-    d = FakeDecider(prefer={"timestamp marks": "orders.order_purchase_timestamp"}, noul={".": 0.05})
+    d = FakeDecider(prefer={"timestamp marks": "orders.order_purchase_timestamp"},
+                    noul={"came into existence": 0.9, ".": 0.05})
     s = Schema.load(leaky_market, decider=d)
     spec = _churn_spec()
     val, test = choose_splits(s.con, '"order_items"', "order_purchase_timestamp", 30)
@@ -153,7 +154,7 @@ def test_audit_drops_snapshot_columns_from_the_data_alone(leaky_market, monkeypa
 
 def test_audit_follows_a_confident_meaning_prior(market):
     d = FakeDecider(prefer={"timestamp marks": "orders.order_purchase_timestamp"},
-                    noul={"order_status": 0.9, ".": 0.05})
+                    noul={"came into existence": 0.9, "order_status": 0.9, ".": 0.05})
     s = Schema.load(market, decider=d)
     audits = Auditor(s, d).run(_churn_spec(), pd.DataFrame(columns=["timestamp", "seller_id", "target"]))
     verdict = {(a.table, a.column): a.verdict for a in audits}

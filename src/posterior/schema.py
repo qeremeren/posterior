@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
+import yaml
 
-from .decider import Choice
+from .decider import Choice, Noul
 
 TIME_TYPES = ("TIMESTAMP", "DATE", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP_NS", "TIMESTAMP_MS", "TIMESTAMP_S")
 NUM_TYPES = ("TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UTINYINT", "USMALLINT", "UINTEGER",
@@ -118,15 +119,35 @@ class Schema:
         schema._find_times(decider)
         return schema
 
+    @classmethod
+    def from_relarena(cls, db_yaml: str | Path, data_dir: str | Path, threads: int | None = None) -> "Schema":
+        """Load a database described by a RelArena db.yaml, taking its keys, links and times as given."""
+        spec = yaml.safe_load(Path(db_yaml).read_text())
+        con = duckdb.connect()
+        con.execute(f"SET threads={threads or max(1, (os.cpu_count() or 4) - 1)}")
+        tables: dict[str, Table] = {}
+        for name, e in spec.items():
+            path = Path(data_dir) / (e.get("path") or f"{name}.parquet")
+            con.execute(f'CREATE TABLE "{name}" AS SELECT * FROM read_parquet(\'{path}\')')
+            t = cls._profile(con, name, str(path))
+            t.pkey, t.time_col, t.fkeys = e.get("pkey"), e.get("time_col"), dict(e.get("fkeys") or {})
+            tables[name] = t
+        return cls(con, tables)
+
     @staticmethod
     def _profile(con: duckdb.DuckDBPyConnection, name: str, source: str) -> Table:
         n_rows = con.execute(f'SELECT count(*) FROM "{name}"').fetchone()[0]
+        big = n_rows > 1_000_000
+        src = f'(SELECT * FROM "{name}" USING SAMPLE 500000 ROWS)' if big else f'"{name}"'
         cols: dict[str, Column] = {}
         for cname, ctype, *_ in con.execute(f'DESCRIBE "{name}"').fetchall():
             q = f'"{cname}"'
-            nd, nn = con.execute(f'SELECT count(DISTINCT {q}), count({q}) FROM "{name}"').fetchone()
+            nd, nn = con.execute(f'SELECT count(DISTINCT {q}), count({q}) FROM "{name}"').fetchone() if not big else \
+                con.execute(f'SELECT approx_count_distinct({q}), count({q}) FROM "{name}"').fetchone()
+            if big and nd >= 0.98 * n_rows:  # confirm uniqueness exactly for key candidates
+                nd = con.execute(f'SELECT count(DISTINCT {q}) FROM "{name}"').fetchone()[0]
             samples = [str(r[0])[:40] for r in con.execute(
-                f'SELECT {q} FROM "{name}" WHERE {q} IS NOT NULL GROUP BY {q} ORDER BY count(*) DESC LIMIT 5'
+                f'SELECT {q} FROM {src} WHERE {q} IS NOT NULL GROUP BY {q} ORDER BY count(*) DESC LIMIT 5'
             ).fetchall()]
             ctype_u = ctype.upper()
             if any(ctype_u.startswith(t) for t in TIME_TYPES):
@@ -138,7 +159,7 @@ class Schema:
             elif ctype_u in NUM_TYPES or ctype_u.startswith("DECIMAL"):
                 kind = "numeric"
             elif ctype_u.startswith("VARCHAR"):
-                avg_len = con.execute(f'SELECT avg(length({q})) FROM "{name}"').fetchone()[0] or 0
+                avg_len = con.execute(f'SELECT avg(length({q})) FROM {src}').fetchone()[0] or 0
                 if nd <= 50 or nd <= 0.02 * max(nn, 1):
                     kind = "categorical"
                 elif avg_len > 30:
@@ -211,7 +232,13 @@ class Schema:
         for n, t in self.tables.items():
             if n in children or not own[n]:
                 continue
-            t.time_col = own[n][0] if len(own[n]) == 1 else self._pick_time(t, {c: c for c in own[n]}, decider)
+            col = own[n][0] if len(own[n]) == 1 else self._pick_time(t, {c: c for c in own[n]}, decider)
+            # A keyed table's timestamp is its event time only if it marks when the row came into existence
+            # (an order placed, a user signing up). A "last order date" is a snapshot, not an event time,
+            # and must stay an ordinary column so the leakage audit can see it.
+            if t.pkey and not self._is_creation_time(t, col, decider):
+                continue
+            t.time_col = col
         for n in children:
             t = self.tables[n]
             options: dict[str, tuple[str, str, str] | None] = {c: None for c in own[n]}
@@ -242,6 +269,16 @@ class Schema:
         )
         dtype = self.tables[parent].columns[ptime].dtype
         t.columns[t.time_col] = Column(t.time_col, dtype, "time", 0, 0.0, [])
+
+    @staticmethod
+    def _is_creation_time(t: Table, col: str, decider: Any) -> bool:
+        if decider is not None:
+            p = decider.ask_one({"table": t.describe()}, Noul(
+                f"Does '{col}' record the moment each {t.name} row came into existence, such as an order being "
+                f"placed, a user signing up or a post being created, rather than a later or last activity?"))
+            return float(p) >= 0.5
+        return bool(re.search(r"(creat|signup|sign_up|join|regist|start|placed|purchase|opened|^date$|^timestamp$)",
+                              col, re.I)) and not re.search(r"(last|latest|updated|modified|end)", col, re.I)
 
     @staticmethod
     def _pick_time(t: Table, options: dict[str, str], decider: Any) -> str:

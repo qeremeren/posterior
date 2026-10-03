@@ -108,6 +108,6 @@ def churn_decider() -> FakeDecider:
     return FakeDecider(
         prefer={"Which table's rows": "sellers", "kind of answer": "yes_or_no", "outcome does": "stops",
                 "timestamp marks": "orders.order_purchase_timestamp"},
-        noul={"stop, churn, again": 0.9, "keeps being updated": 0.1, "filled in or changed": 0.2,
-              "status": 0.85},
+        noul={"came into existence": 0.9, "stop, churn, again": 0.9, "keeps being updated": 0.1,
+              "filled in or changed": 0.2, "status": 0.85},
     )

@@ -125,9 +125,12 @@ def _looks_like_dates(s: pd.Series) -> bool:
 
 
 class Auditor:
-    def __init__(self, schema: Schema, decider: Any, drop_at: float = 0.6, prior_only_drop_at: float = 0.75):
+    def __init__(self, schema: Schema, decider: Any, drop_at: float = 0.6, prior_only_drop_at: float = 0.75,
+                 use_meaning: bool = True, use_data: bool = True):
         self.schema = schema
         self.decider = decider
+        self.use_meaning = use_meaning
+        self.use_data = use_data
         self.drop_at = drop_at
         self.prior_only_drop_at = prior_only_drop_at
         self.scorer = _Scorer()
@@ -189,13 +192,15 @@ class Auditor:
     def run(self, spec: Spec, train: pd.DataFrame) -> list[ColumnAudit]:
         out: list[ColumnAudit] = []
         for name, t in self.schema.tables.items():
-            meaning = self._meaning(name)
+            meaning = self._meaning(name) if self.use_meaning else {}
             role = "entity" if name == spec.entity else ("event" if t.is_event else "dimension")
             for col in self._audited_columns(name):
                 prior = float(meaning.get(col, 0.0))
                 ev: float | None = None
                 kind, raw = "none", None
-                if t.is_event:
+                if not self.use_data:
+                    pass
+                elif t.is_event:
                     raw = self._age_shift(name, col)
                     kind, ev = "newest rows differ", raw
                 elif role == "entity":
@@ -203,8 +208,9 @@ class Auditor:
                     if aucs is not None:
                         auc, base = aucs
                         kind, raw = f"AUC with the anchor time vs {base:.2f} without the column ({self.scorer.name})", auc
-                        # Suspicious when the column alone is strong and adds a lot over the time of year.
-                        ev = float(np.clip((auc - 0.75) / 0.15, 0, 1) * np.clip((auc - base) / 0.1, 0, 1))
+                        # Suspicious when the column adds a lot over the anchor time alone. On Olist the
+                        # injected snapshot columns add 0.13 to 0.26 AUC; ordinary seller attributes add ~0.
+                        ev = float(np.clip((auc - base - 0.05) / 0.15, 0, 1))
                 out.append(self._decide(name, col, role, prior, ev, kind, raw))
         return out
 
@@ -217,7 +223,10 @@ class Auditor:
             score, drop = prior, prior >= self.prior_only_drop_at
         else:
             score = 1 - (1 - prior) * (1 - ev)
-            drop = prior >= self.prior_only_drop_at or ev >= 0.6 or score >= self.drop_at
+            # Either kind of evidence decides alone only when it is strong; otherwise both must point the
+            # same way, so a genuinely predictive attribute with an innocent meaning is kept.
+            drop = (prior >= self.prior_only_drop_at or ev >= 0.9
+                    or (score >= self.drop_at and min(prior, ev) >= 0.25))
         parts = [f"meaning: updated later with p={prior:.2f}"]
         if raw is not None:
             parts.append(f"{kind}: {raw:.2f}")

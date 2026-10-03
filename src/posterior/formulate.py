@@ -37,6 +37,37 @@ def parse_horizon(question: str) -> int | None:
     return None
 
 
+_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "ten": 10}
+
+
+def parse_threshold(question: str) -> float | None:
+    """"more than 2 invitations" gives 2, "at least 3" gives 2 (the label is count > threshold)."""
+    m = re.search(r"\b(more than|over|above|at least)\s+(\d+|one|two|three|four|five|ten)\b", question.lower())
+    if not m:
+        return None
+    n = int(m.group(2)) if m.group(2).isdigit() else _NUM[m.group(2)]
+    return float(n - 1 if m.group(1) == "at least" else n)
+
+
+def parse_lookback(question: str) -> int | None:
+    """"if they attended in the last 14 days" sets how far back recent activity is looked for."""
+    m = re.search(r"\b(?:in|within|during|over) the (?:last|past|previous) (\d+) (days?|weeks?|months?)", question.lower())
+    return int(m.group(1)) * _UNITS[m.group(2)] if m else None
+
+
+def shortlist(options: dict[str, str], question: str, k: int = 40) -> dict[str, str]:
+    """Keep the k options that share the most words with the question (decision models cap the options)."""
+    if len(options) <= k:
+        return options
+    words = set(re.findall(r"[a-z]+", question.lower()))
+
+    def overlap(item: tuple[str, str]) -> int:
+        return len(words & set(re.findall(r"[a-z]+", (item[0] + " " + item[1]).replace("_", " ").lower())))
+
+    ranked = sorted(options.items(), key=overlap, reverse=True)
+    return dict(ranked[:k])
+
+
 @dataclass
 class Formulation:
     question: str
@@ -82,7 +113,7 @@ class Formulator:
         q = Choice(
             instructions=("The question asks for a prediction about each row of one table. Which table's rows "
                           "is the question about?"),
-            options={c: f"one prediction per row of {c}" for c in cands},
+            options=shortlist({c: f"one prediction per row of {c}" for c in cands}, question),
         )
         return self._kept(self._ask("entity", self._state(question), q))
 
@@ -137,7 +168,7 @@ class Formulator:
             return [(nums[0], 1.0)]
         q = Choice(
             instructions=f"Which column of {event} holds the amount or value the question totals or averages?",
-            options={c: f"{c}, e.g. {', '.join(t.columns[c].samples[:3])}" for c in nums},
+            options=shortlist({c: f"{c}, e.g. {', '.join(t.columns[c].samples[:3])}" for c in nums}, question),
         )
         return self._kept(self._ask("value", self._state(question, event), q))
 
@@ -157,13 +188,16 @@ class Formulator:
                         cands[f"{c.name} >= {n}"] = Filter(c.name, ">=", n)
         if not cands:
             return [(None, 1.0)]
-        p_any = self._ask("filter?", self._state(question, event), Noul(
-            instructions=(f"Does the question only count {event} rows of a particular kind, such as a specific "
-                          "status, type, category or a value above or below a threshold, rather than all of them?")))
+        kind = self._ask("filter?", {"question": question}, Choice(
+            instructions="Which activity does the question count?",
+            options={"all": "all activity counts",
+                     "some": "only activity of a particular kind counts, such as a top-3 finish, a cancelled "
+                             "order, an ignored invitation or a 5-star review"}))
+        p_any = kind["some"]
         out: list[tuple[Filter | None, float]] = [(None, 1 - p_any)]
         if p_any >= self.keep:
             q = Choice(instructions=f"Which condition picks the {event} rows the question is about?",
-                       options={k: k for k in list(cands)[:60]})
+                       options=shortlist({k: k for k in cands}, question))
             for label, p in self._kept(self._ask("filter", self._state(question, event), q)):
                 out.append((cands[label], p_any * p))
         return sorted(out, key=lambda kv: -kv[1])
@@ -201,16 +235,26 @@ class Formulator:
                 values = self.value(question, event)
                 filters = self.filters(question, event)
                 pops = self.population(question, entity, event)
-                for (op, p_op), (flt, p_f), (h, p_h) in itertools.product(ops, filters, horizons):
+                thr, lookback = parse_threshold(question), parse_lookback(question)
+                ops_ext: list[tuple[tuple[str, float | None], float]] = []
+                for op, p in ops:
+                    if op == "exists" and thr is not None:
+                        # "more than 2 invitations": a yes/no answer about a count crossing a threshold.
+                        ops_ext += [(("count", thr), p * 0.9), (("exists", None), p * 0.1)]
+                    else:
+                        ops_ext.append(((op, None), p))
+                for ((op, t_hold), p_op), (flt, p_f), (h, p_h) in itertools.product(ops_ext, filters, horizons):
                     vals = values if op in ("sum", "mean") else [(None, 1.0)]
                     for v, p_v in vals:
                         valid = {}
                         pop_probs = dict(pops)
-                        if op == "not_exists":
-                            # Only something that was active can stop: stopping implies recent activity.
+                        if op == "not_exists" or lookback:
+                            # Only something that was active can stop, and "if they attended in the last
+                            # 14 days" names the active population outright.
                             pop_probs["recent"] = max(pop_probs["recent"], 0.8)
                         for pop, p_pop in pop_probs.items():
-                            s = Spec(entity, key, event, link, time_col, op, h, pop, value=v, filter=flt)
+                            s = Spec(entity, key, event, link, time_col, op, h, pop, value=v, filter=flt,
+                                     threshold=t_hold, lookback_days=lookback if pop == "recent" else None)
                             if s.valid():
                                 valid[pop] = (s, p_pop)
                         z = sum(p for _, p in valid.values()) or 1.0

@@ -91,7 +91,7 @@ class Posterior:
         return f"{spec.entity}-{spec.op}-{spec.horizon_days}d-{h}"
 
     def ask(self, question: str, reading: int | None = None, live: bool = True, auto: bool = True,
-            run_model: bool = True) -> Result:
+            run_model: bool = True, audit: bool = True) -> Result:
         """Formulate, clarify, audit and learn.
 
         ``reading`` picks one of the readings (for example after a clarification). With ``auto`` the most
@@ -115,7 +115,7 @@ class Posterior:
         h = timedelta(days=spec.horizon_days)
         train_anchors = [a for a in anchors_before(val - h, spec.horizon_days, 24)]
         train = run_labels(self.schema.con, spec.label_sql(), train_anchors, spec.horizon_days)
-        result.audit = self.auditor.run(spec, train)
+        result.audit = self.auditor.run(spec, train) if audit else []
         if not run_model:
             result.seconds = time.time() - t0
             return result
