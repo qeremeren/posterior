@@ -100,6 +100,12 @@ class Formulator:
         out = [kv for kv in ranked if kv[1] >= self.keep][: self.beam]
         return out or ranked[:1]
 
+    def _cols(self, table: str, n: int = 6) -> str:
+        t = self.schema.tables[table]
+        skip = {t.pkey, *t.fkeys}
+        cols = [c for c in t.columns if c not in skip][:n]
+        return ", ".join(cols)
+
     def _state(self, question: str, *tables: str) -> dict[str, Any]:
         names = tables or tuple(self.schema.tables)
         return {"question": question,
@@ -110,12 +116,13 @@ class Formulator:
         cands = self.schema.entity_candidates()
         if len(cands) == 1:
             return [(cands[0], 1.0)]
+        # Asked on the wording alone: with every table described in the state the model drifted towards
+        # whatever table the question's nouns matched (rel-event: "events" instead of the users).
         q = Choice(
-            instructions=("The question asks for a prediction about each row of one table. Which table's rows "
-                          "is the question about?"),
-            options=shortlist({c: f"one prediction per row of {c}" for c in cands}, question),
+            instructions="Who or what is the subject of the question: the thing each prediction is made for?",
+            options=shortlist({c: f"one prediction per row of {c} (columns: {self._cols(c)})" for c in cands}, question),
         )
-        return self._kept(self._ask("entity", self._state(question), q))
+        return self._kept(self._ask("entity", {"question": question}, q))
 
     def event(self, question: str, entity: str) -> list[tuple[tuple[str, str], float]]:
         links = self.schema.links_to(entity)
@@ -123,11 +130,11 @@ class Formulator:
             return [(links[0], 1.0)]
         labels = {f"{ev}.{col}" if sum(e == ev for e, _ in links) > 1 else ev: (ev, col) for ev, col in links}
         q = Choice(
-            instructions=(f"Which kind of event does the question count or look at for each {entity} row? "
-                          "Pick the table whose rows are those events."),
-            options={lab: f"{ev} rows linked to {entity} through {col}" for lab, (ev, col) in labels.items()},
+            instructions=f"Which records would you count or look at to answer the question for each {entity}?",
+            options={lab: f"{ev} rows, linked to {entity} through {col} (columns: {self._cols(ev)})"
+                     for lab, (ev, col) in labels.items()},
         )
-        ans = self._ask("event", self._state(question, entity, *[e for e, _ in links]), q)
+        ans = self._ask("event", {"question": question}, q)
         return [(labels[lab], p) for lab, p in self._kept(ans)]
 
     def op(self, question: str, entity: str, event: str) -> list[tuple[str, float]]:

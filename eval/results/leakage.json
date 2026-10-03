@@ -6,10 +6,11 @@
       "mode": "meaning only",
       "injected_caught": "3/4",
       "recall": 0.75,
-      "agreement_with_prior_labs_allow_list": 0.8,
+      "agreement_with_prior_labs_allow_list": 0.84,
       "dropped_original_columns": [
         "orders.order_delivered_carrier_date",
         "orders.order_delivered_customer_date",
+        "orders.order_estimated_delivery_date",
         "orders.order_status"
       ],
       "columns": [
@@ -137,23 +138,23 @@
           "table": "order_reviews",
           "column": "review_score",
           "role": "event",
-          "meaning": 0.3909,
+          "meaning": 0.3725,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.3909,
+          "score": 0.3725,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.39"
+          "reason": "meaning: updated later with p=0.37"
         },
         {
           "table": "order_reviews",
           "column": "review_comment_title",
           "role": "event",
-          "meaning": 0.4183,
+          "meaning": 0.4223,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.4183,
+          "score": 0.4223,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.42"
         },
@@ -161,11 +162,11 @@
           "table": "order_reviews",
           "column": "review_comment_message",
           "role": "event",
-          "meaning": 0.4656,
+          "meaning": 0.4696,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.4656,
+          "score": 0.4696,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.47"
         },
@@ -173,11 +174,11 @@
           "table": "order_reviews",
           "column": "review_answer_timestamp",
           "role": "event",
-          "meaning": 0.6101,
+          "meaning": 0.6146,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.6101,
+          "score": 0.6146,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.61"
         },
@@ -185,35 +186,35 @@
           "table": "orders",
           "column": "order_status",
           "role": "event",
-          "meaning": 0.7869,
+          "meaning": 0.7801,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.7869,
+          "score": 0.7801,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.79"
+          "reason": "meaning: updated later with p=0.78"
         },
         {
           "table": "orders",
           "column": "order_approved_at",
           "role": "event",
-          "meaning": 0.5134,
+          "meaning": 0.5503,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.5134,
+          "score": 0.5503,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.51"
+          "reason": "meaning: updated later with p=0.55"
         },
         {
           "table": "orders",
           "column": "order_delivered_carrier_date",
           "role": "event",
-          "meaning": 0.8179,
+          "meaning": 0.8188,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.8179,
+          "score": 0.8188,
           "verdict": "drop",
           "reason": "meaning: updated later with p=0.82"
         },
@@ -221,35 +222,35 @@
           "table": "orders",
           "column": "order_delivered_customer_date",
           "role": "event",
-          "meaning": 0.8529,
+          "meaning": 0.8313,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.8529,
+          "score": 0.8313,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.85"
+          "reason": "meaning: updated later with p=0.83"
         },
         {
           "table": "orders",
           "column": "order_estimated_delivery_date",
           "role": "event",
-          "meaning": 0.7276,
+          "meaning": 0.7716,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.7276,
-          "verdict": "keep",
-          "reason": "meaning: updated later with p=0.73"
+          "score": 0.7716,
+          "verdict": "drop",
+          "reason": "meaning: updated later with p=0.77"
         },
         {
           "table": "products",
           "column": "product_name_lenght",
           "role": "dimension",
-          "meaning": 0.036,
+          "meaning": 0.0386,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.036,
+          "score": 0.0386,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.04"
         },
@@ -269,23 +270,23 @@
           "table": "products",
           "column": "product_photos_qty",
           "role": "dimension",
-          "meaning": 0.1281,
+          "meaning": 0.1235,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.1281,
+          "score": 0.1235,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.13"
+          "reason": "meaning: updated later with p=0.12"
         },
         {
           "table": "products",
           "column": "product_weight_g",
           "role": "dimension",
-          "meaning": 0.0329,
+          "meaning": 0.0305,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0329,
+          "score": 0.0305,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.03"
         },
@@ -293,11 +294,11 @@
           "table": "products",
           "column": "product_length_cm",
           "role": "dimension",
-          "meaning": 0.0194,
+          "meaning": 0.0187,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0194,
+          "score": 0.0187,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -305,11 +306,11 @@
           "table": "products",
           "column": "product_height_cm",
           "role": "dimension",
-          "meaning": 0.0157,
+          "meaning": 0.0164,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0157,
+          "score": 0.0164,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -317,11 +318,11 @@
           "table": "products",
           "column": "product_width_cm",
           "role": "dimension",
-          "meaning": 0.0192,
+          "meaning": 0.0188,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0192,
+          "score": 0.0188,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -329,23 +330,23 @@
           "table": "sellers",
           "column": "seller_zip_code_prefix",
           "role": "entity",
-          "meaning": 0.044,
+          "meaning": 0.0454,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.044,
+          "score": 0.0454,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.04"
+          "reason": "meaning: updated later with p=0.05"
         },
         {
           "table": "sellers",
           "column": "seller_city",
           "role": "entity",
-          "meaning": 0.0646,
+          "meaning": 0.0583,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0646,
+          "score": 0.0583,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.06"
         },
@@ -353,11 +354,11 @@
           "table": "sellers",
           "column": "seller_state",
           "role": "entity",
-          "meaning": 0.0523,
+          "meaning": 0.0532,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0523,
+          "score": 0.0532,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.05"
         },
@@ -365,11 +366,11 @@
           "table": "sellers",
           "column": "seller_last_order_date",
           "role": "entity",
-          "meaning": 0.8598,
+          "meaning": 0.8582,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.8598,
+          "score": 0.8582,
           "verdict": "drop",
           "reason": "meaning: updated later with p=0.86"
         },
@@ -377,23 +378,23 @@
           "table": "sellers",
           "column": "seller_status",
           "role": "entity",
-          "meaning": 0.5436,
+          "meaning": 0.5528,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.5436,
+          "score": 0.5528,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.54"
+          "reason": "meaning: updated later with p=0.55"
         },
         {
           "table": "sellers",
           "column": "seller_lifetime_items",
           "role": "entity",
-          "meaning": 0.901,
+          "meaning": 0.8969,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.901,
+          "score": 0.8969,
           "verdict": "drop",
           "reason": "meaning: updated later with p=0.90"
         },
@@ -401,20 +402,20 @@
           "table": "sellers",
           "column": "seller_lifetime_revenue",
           "role": "entity",
-          "meaning": 0.8706,
+          "meaning": 0.8614,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.8706,
+          "score": 0.8614,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.87"
+          "reason": "meaning: updated later with p=0.86"
         }
       ]
     },
     {
       "mode": "data only",
-      "injected_caught": "3/4",
-      "recall": 0.75,
+      "injected_caught": "2/4",
+      "recall": 0.5,
       "agreement_with_prior_labs_allow_list": 0.68,
       "dropped_original_columns": [],
       "columns": [
@@ -736,11 +737,11 @@
           "role": "entity",
           "meaning": 0.0,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5729,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5641,
           "score": 0.0,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.57"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.56"
         },
         {
           "table": "sellers",
@@ -748,11 +749,11 @@
           "role": "entity",
           "meaning": 0.0,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5625,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5779,
           "score": 0.0,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.56"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.58"
         },
         {
           "table": "sellers",
@@ -760,35 +761,35 @@
           "role": "entity",
           "meaning": 0.0,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5241,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5742,
           "score": 0.0,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.52"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.57"
         },
         {
           "table": "sellers",
           "column": "seller_last_order_date",
           "role": "entity",
           "meaning": 0.0,
-          "evidence": 0.9132,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7336,
-          "score": 0.9132,
+          "evidence": 0.9818,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.7615,
+          "score": 0.9818,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.73"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.76"
         },
         {
           "table": "sellers",
           "column": "seller_status",
           "role": "entity",
           "meaning": 0.0,
-          "evidence": 0.5005,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.6717,
-          "score": 0.5005,
+          "evidence": 0.4372,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.6798,
+          "score": 0.4372,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.67"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.68"
         },
         {
           "table": "sellers",
@@ -796,23 +797,23 @@
           "role": "entity",
           "meaning": 0.0,
           "evidence": 1.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7941,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.8096,
           "score": 1.0,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.79"
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.81"
         },
         {
           "table": "sellers",
           "column": "seller_lifetime_revenue",
           "role": "entity",
           "meaning": 0.0,
-          "evidence": 1.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7467,
-          "score": 1.0,
-          "verdict": "drop",
-          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.55 without the column (sklearn): 0.75"
+          "evidence": 0.7598,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.7282,
+          "score": 0.7598,
+          "verdict": "keep",
+          "reason": "meaning: updated later with p=0.00; AUC with the anchor time vs 0.56 without the column (sklearn): 0.73"
         }
       ]
     },
@@ -820,11 +821,12 @@
       "mode": "both",
       "injected_caught": "4/4",
       "recall": 1.0,
-      "agreement_with_prior_labs_allow_list": 0.84,
+      "agreement_with_prior_labs_allow_list": 0.88,
       "dropped_original_columns": [
         "order_reviews.review_comment_title",
         "orders.order_delivered_carrier_date",
         "orders.order_delivered_customer_date",
+        "orders.order_estimated_delivery_date",
         "orders.order_status"
       ],
       "columns": [
@@ -952,23 +954,23 @@
           "table": "order_reviews",
           "column": "review_score",
           "role": "event",
-          "meaning": 0.3909,
+          "meaning": 0.3725,
           "evidence": 0.0,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0,
-          "score": 0.3909,
+          "score": 0.3725,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.39; newest rows differ: 0.00"
+          "reason": "meaning: updated later with p=0.37; newest rows differ: 0.00"
         },
         {
           "table": "order_reviews",
           "column": "review_comment_title",
           "role": "event",
-          "meaning": 0.4183,
+          "meaning": 0.4223,
           "evidence": 0.3155,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.3155,
-          "score": 0.6018,
+          "score": 0.6045,
           "verdict": "drop",
           "reason": "meaning: updated later with p=0.42; newest rows differ: 0.32"
         },
@@ -976,11 +978,11 @@
           "table": "order_reviews",
           "column": "review_comment_message",
           "role": "event",
-          "meaning": 0.4656,
+          "meaning": 0.4696,
           "evidence": 0.0716,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0716,
-          "score": 0.5039,
+          "score": 0.5076,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.47; newest rows differ: 0.07"
         },
@@ -988,11 +990,11 @@
           "table": "order_reviews",
           "column": "review_answer_timestamp",
           "role": "event",
-          "meaning": 0.6101,
+          "meaning": 0.6146,
           "evidence": 0.0,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0,
-          "score": 0.6101,
+          "score": 0.6146,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.61; newest rows differ: 0.00"
         },
@@ -1000,35 +1002,35 @@
           "table": "orders",
           "column": "order_status",
           "role": "event",
-          "meaning": 0.7869,
+          "meaning": 0.7801,
           "evidence": 0.0172,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0172,
-          "score": 0.7906,
+          "score": 0.7839,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.79; newest rows differ: 0.02"
+          "reason": "meaning: updated later with p=0.78; newest rows differ: 0.02"
         },
         {
           "table": "orders",
           "column": "order_approved_at",
           "role": "event",
-          "meaning": 0.5134,
+          "meaning": 0.5503,
           "evidence": 0.0368,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0368,
-          "score": 0.5313,
+          "score": 0.5668,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.51; newest rows differ: 0.04"
+          "reason": "meaning: updated later with p=0.55; newest rows differ: 0.04"
         },
         {
           "table": "orders",
           "column": "order_delivered_carrier_date",
           "role": "event",
-          "meaning": 0.8179,
+          "meaning": 0.8188,
           "evidence": 0.0218,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0218,
-          "score": 0.8219,
+          "score": 0.8228,
           "verdict": "drop",
           "reason": "meaning: updated later with p=0.82; newest rows differ: 0.02"
         },
@@ -1036,35 +1038,35 @@
           "table": "orders",
           "column": "order_delivered_customer_date",
           "role": "event",
-          "meaning": 0.8529,
+          "meaning": 0.8313,
           "evidence": 0.0061,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0061,
-          "score": 0.8538,
+          "score": 0.8323,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.85; newest rows differ: 0.01"
+          "reason": "meaning: updated later with p=0.83; newest rows differ: 0.01"
         },
         {
           "table": "orders",
           "column": "order_estimated_delivery_date",
           "role": "event",
-          "meaning": 0.7276,
+          "meaning": 0.7716,
           "evidence": 0.0,
           "evidence_kind": "newest rows differ",
           "evidence_value": 0.0,
-          "score": 0.7276,
-          "verdict": "keep",
-          "reason": "meaning: updated later with p=0.73; newest rows differ: 0.00"
+          "score": 0.7716,
+          "verdict": "drop",
+          "reason": "meaning: updated later with p=0.77; newest rows differ: 0.00"
         },
         {
           "table": "products",
           "column": "product_name_lenght",
           "role": "dimension",
-          "meaning": 0.036,
+          "meaning": 0.0386,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.036,
+          "score": 0.0386,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.04"
         },
@@ -1084,23 +1086,23 @@
           "table": "products",
           "column": "product_photos_qty",
           "role": "dimension",
-          "meaning": 0.1281,
+          "meaning": 0.1235,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.1281,
+          "score": 0.1235,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.13"
+          "reason": "meaning: updated later with p=0.12"
         },
         {
           "table": "products",
           "column": "product_weight_g",
           "role": "dimension",
-          "meaning": 0.0329,
+          "meaning": 0.0305,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0329,
+          "score": 0.0305,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.03"
         },
@@ -1108,11 +1110,11 @@
           "table": "products",
           "column": "product_length_cm",
           "role": "dimension",
-          "meaning": 0.0194,
+          "meaning": 0.0187,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0194,
+          "score": 0.0187,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -1120,11 +1122,11 @@
           "table": "products",
           "column": "product_height_cm",
           "role": "dimension",
-          "meaning": 0.0157,
+          "meaning": 0.0164,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0157,
+          "score": 0.0164,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -1132,11 +1134,11 @@
           "table": "products",
           "column": "product_width_cm",
           "role": "dimension",
-          "meaning": 0.0192,
+          "meaning": 0.0188,
           "evidence": null,
           "evidence_kind": "none",
           "evidence_value": null,
-          "score": 0.0192,
+          "score": 0.0188,
           "verdict": "keep",
           "reason": "meaning: updated later with p=0.02"
         },
@@ -1144,87 +1146,137 @@
           "table": "sellers",
           "column": "seller_zip_code_prefix",
           "role": "entity",
-          "meaning": 0.044,
+          "meaning": 0.0454,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5729,
-          "score": 0.044,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5641,
+          "score": 0.0454,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.04; AUC with the anchor time vs 0.55 without the column (sklearn): 0.57"
+          "reason": "meaning: updated later with p=0.05; AUC with the anchor time vs 0.56 without the column (sklearn): 0.56"
         },
         {
           "table": "sellers",
           "column": "seller_city",
           "role": "entity",
-          "meaning": 0.0646,
+          "meaning": 0.0583,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5625,
-          "score": 0.0646,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5779,
+          "score": 0.0583,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.06; AUC with the anchor time vs 0.55 without the column (sklearn): 0.56"
+          "reason": "meaning: updated later with p=0.06; AUC with the anchor time vs 0.56 without the column (sklearn): 0.58"
         },
         {
           "table": "sellers",
           "column": "seller_state",
           "role": "entity",
-          "meaning": 0.0523,
+          "meaning": 0.0532,
           "evidence": 0.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.5241,
-          "score": 0.0523,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.5742,
+          "score": 0.0532,
           "verdict": "keep",
-          "reason": "meaning: updated later with p=0.05; AUC with the anchor time vs 0.55 without the column (sklearn): 0.52"
+          "reason": "meaning: updated later with p=0.05; AUC with the anchor time vs 0.56 without the column (sklearn): 0.57"
         },
         {
           "table": "sellers",
           "column": "seller_last_order_date",
           "role": "entity",
-          "meaning": 0.8598,
-          "evidence": 0.9132,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7336,
-          "score": 0.9878,
+          "meaning": 0.8582,
+          "evidence": 0.9818,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.7615,
+          "score": 0.9974,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.86; AUC with the anchor time vs 0.55 without the column (sklearn): 0.73"
+          "reason": "meaning: updated later with p=0.86; AUC with the anchor time vs 0.56 without the column (sklearn): 0.76"
         },
         {
           "table": "sellers",
           "column": "seller_status",
           "role": "entity",
-          "meaning": 0.5436,
-          "evidence": 0.5005,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.6717,
-          "score": 0.772,
+          "meaning": 0.5528,
+          "evidence": 0.4372,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.6798,
+          "score": 0.7483,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.54; AUC with the anchor time vs 0.55 without the column (sklearn): 0.67"
+          "reason": "meaning: updated later with p=0.55; AUC with the anchor time vs 0.56 without the column (sklearn): 0.68"
         },
         {
           "table": "sellers",
           "column": "seller_lifetime_items",
           "role": "entity",
-          "meaning": 0.901,
+          "meaning": 0.8969,
           "evidence": 1.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7941,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.8096,
           "score": 1.0,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.90; AUC with the anchor time vs 0.55 without the column (sklearn): 0.79"
+          "reason": "meaning: updated later with p=0.90; AUC with the anchor time vs 0.56 without the column (sklearn): 0.81"
         },
         {
           "table": "sellers",
           "column": "seller_lifetime_revenue",
           "role": "entity",
-          "meaning": 0.8706,
-          "evidence": 1.0,
-          "evidence_kind": "AUC with the anchor time vs 0.55 without the column (sklearn)",
-          "evidence_value": 0.7467,
-          "score": 1.0,
+          "meaning": 0.8614,
+          "evidence": 0.7598,
+          "evidence_kind": "AUC with the anchor time vs 0.56 without the column (sklearn)",
+          "evidence_value": 0.7282,
+          "score": 0.9667,
           "verdict": "drop",
-          "reason": "meaning: updated later with p=0.87; AUC with the anchor time vs 0.55 without the column (sklearn): 0.75"
+          "reason": "meaning: updated later with p=0.86; AUC with the anchor time vs 0.56 without the column (sklearn): 0.73"
         }
       ]
     }
-  ]
+  ],
+  "tabpfn_no_audit": {
+    "backend": "client",
+    "task_type": "binary_classification",
+    "metrics": {
+      "positive_rate": 0.2767145135566188,
+      "brier": 0.00021252089131118619,
+      "roc_auc": 1.0
+    },
+    "baselines": {
+      "constant_global": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.20019964265952436,
+        "roc_auc": 0.5
+      },
+      "constant_per_entity": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.21556800656528452,
+        "roc_auc": 0.6698095822119983
+      }
+    },
+    "test_rows": 1254,
+    "test_timestamp": "2018-08-01 00:00:00",
+    "seconds": 80.3,
+    "notes": []
+  },
+  "tabpfn_with_audit": {
+    "backend": "client",
+    "task_type": "binary_classification",
+    "metrics": {
+      "positive_rate": 0.2767145135566188,
+      "brier": 0.16588650674518815,
+      "roc_auc": 0.7741549078731227
+    },
+    "baselines": {
+      "constant_global": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.20019964265952436,
+        "roc_auc": 0.5
+      },
+      "constant_per_entity": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.21556800656528452,
+        "roc_auc": 0.6698095822119983
+      }
+    },
+    "test_rows": 1254,
+    "test_timestamp": "2018-08-01 00:00:00",
+    "seconds": 74.6,
+    "notes": []
+  }
 }
