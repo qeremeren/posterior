@@ -97,6 +97,8 @@ class Schema:
             names = _clean_names([p.stem for p in files])
             for p in files:
                 name = names[p.stem]
+                if name in sources:  # two files clean to the same name: keep the raw stem
+                    name = p.stem
                 reader = "read_parquet" if p.suffix.lower() == ".parquet" else "read_csv_auto"
                 extra = "" if reader == "read_parquet" else ", sample_size=-1"
                 con.execute(f'CREATE TABLE "{name}" AS SELECT * FROM {reader}(\'{p}\'{extra})')
