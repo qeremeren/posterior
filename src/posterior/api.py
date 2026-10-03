@@ -18,8 +18,22 @@ import uuid
 from typing import Any
 
 import httpx
+from pydantic import BaseModel
 
+from .decider import Noul
 from .engine import Posterior, Result
+
+
+class AskBody(BaseModel):
+    question: str
+    reading: int | None = None
+    live: bool = True
+    auto: bool = True
+    run_model: bool = True
+
+
+class FormulateBody(BaseModel):
+    question: str
 
 
 def _entity_ref(post: Posterior, state: Any) -> tuple[str, Any] | None:
@@ -86,7 +100,7 @@ class Service:
         forward: dict[str, Any] = {}
         for qid, q in questions.items():
             text = q.get("instructions") if isinstance(q.get("instructions"), str) else qid
-            if ref and q.get("type") == "noul":
+            if ref and q.get("type") == "noul" and self._is_future(text):
                 p = self._future_probability(text, *ref)
                 if p is not None:
                     answers[qid] = {"type": "noul", "noul": round(p, 4)}
@@ -103,6 +117,13 @@ class Service:
             model = r.json().get("model", model)
         ordered = {k: answers[k] for k in questions if k in answers}
         return {"model": f"posterior/{model}", "answers": ordered, "usage": {"input_tokens": 0, "output_tokens": 0}}
+
+    def _is_future(self, question: str) -> bool:
+        """Route with the decision model: a prediction about what comes next, or a question about the text?"""
+        p = self.post.decider.ask_one({"question": question}, Noul(
+            "Does this question ask for a prediction about what will happen to someone or something in the "
+            "coming period, rather than about the meaning or content of the text it comes with?"))
+        return float(p) >= 0.5
 
     def _future_probability(self, question: str, table: str, entity_id: Any) -> float | None:
         try:
@@ -123,21 +144,10 @@ class Service:
 
 def create_app(post: Posterior):  # noqa: ANN201
     from fastapi import FastAPI, HTTPException
-    from pydantic import BaseModel
 
     svc = Service(post)
     app = FastAPI(title="Posterior", version="0.1.0",
                   description="Ask a database a question about the future.")
-
-    class AskBody(BaseModel):
-        question: str
-        reading: int | None = None
-        live: bool = True
-        auto: bool = True
-        run_model: bool = True
-
-    class FormulateBody(BaseModel):
-        question: str
 
     @app.get("/health")
     def health() -> dict[str, Any]:

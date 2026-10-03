@@ -27,9 +27,10 @@ _WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "six": 6, "a": 1, "an": 1, 
 def parse_horizon(question: str) -> int | None:
     """Read an explicit window ("next 30 days", "next quarter", "3 months", "30 gün") if there is one."""
     q = question.lower()
-    m = re.search(r"(\d+)\s*-?\s*(days?|weeks?|months?|quarters?|years?|gün|hafta|ay|yıl)\b", q)
+    # English units stand alone; Turkish units take suffixes ("30 günde", "3 ayda").
+    m = re.search(r"(\d+)\s*-?\s*(?:(days?|weeks?|months?|quarters?|years?)(?![a-z])|(gün|hafta|ay|yıl))", q)
     if m:
-        return int(m.group(1)) * _UNITS[m.group(2)]
+        return int(m.group(1)) * _UNITS[m.group(2) or m.group(3)]
     m = re.search(r"\b(one|two|three|four|six|a|an|next|bir|iki|üç)\s+(day|week|month|quarter|year)s?\b", q)
     if m:
         return _WORDS[m.group(1)] * _UNITS[m.group(2)]

@@ -64,28 +64,43 @@ class _Scorer:
         except Exception:  # noqa: BLE001
             self._tabpfn = None
 
-    def auc(self, x: pd.Series, y: pd.Series, max_rows: int = 1200, seed: int = 0) -> float | None:
+    def auc(self, x: pd.Series, y: pd.Series, t: pd.Series | None = None, max_rows: int = 1200,
+            seed: int = 0) -> tuple[float, float] | None:
+        """Out-of-fold AUC of the column (with the anchor time) and of the anchor time alone.
+
+        A date column is measured relative to the anchor ("days until the last order"), which is how a
+        snapshot date leaks.
+        """
         from sklearn.metrics import roc_auc_score
         from sklearn.model_selection import StratifiedKFold
 
-        df = pd.DataFrame({"x": x, "y": y}).dropna(subset=["y"])
+        df = pd.DataFrame({"x": x.values, "y": y.values, "t": (t.values if t is not None else 0)}).dropna(subset=["y"])
         if df["y"].nunique() != 2 or len(df) < 40:
             return None
         if len(df) > max_rows:
             df = df.sample(max_rows, random_state=seed)
-        X = df[["x"]].copy()
-        if X["x"].dtype == object or str(X["x"].dtype).startswith(("string", "category")):
-            X["x"] = X["x"].astype("category").cat.codes
-        elif np.issubdtype(X["x"].dtype, np.datetime64):
-            X["x"] = X["x"].astype("int64") // 10**9
-        X = X.astype(float).fillna(-1e9).to_numpy()
+        ts = pd.to_datetime(df["t"]) if t is not None else None
+        if np.issubdtype(df["x"].dtype, np.datetime64) or (df["x"].dtype == object and _looks_like_dates(df["x"])):
+            xv = (pd.to_datetime(df["x"], errors="coerce") - (ts if ts is not None else 0)).dt.total_seconds() / 86400
+        elif df["x"].dtype == object or str(df["x"].dtype).startswith(("string", "category")):
+            xv = df["x"].astype("category").cat.codes.astype(float)
+        else:
+            xv = df["x"].astype(float)
+        tv = (ts.astype("int64") // 10**9).astype(float) if ts is not None else pd.Series(0.0, index=df.index)
         yv = df["y"].astype(int).to_numpy()
-        oof = np.zeros(len(yv))
-        for tr, te in StratifiedKFold(2, shuffle=True, random_state=seed).split(X, yv):
+        both = np.column_stack([xv.fillna(-1e9).to_numpy(), tv.to_numpy()])
+        return self._oof_auc(both, yv, seed), self._oof_auc(tv.to_numpy()[:, None], yv, seed)
+
+    def _oof_auc(self, X: np.ndarray, y: np.ndarray, seed: int) -> float:
+        from sklearn.metrics import roc_auc_score
+        from sklearn.model_selection import StratifiedKFold
+
+        oof = np.zeros(len(y))
+        for tr, te in StratifiedKFold(2, shuffle=True, random_state=seed).split(X, y):
             model = self._model()
-            model.fit(X[tr], yv[tr])
+            model.fit(X[tr], y[tr])
             oof[te] = model.predict_proba(X[te])[:, 1]
-        a = roc_auc_score(yv, oof)
+        a = roc_auc_score(y, oof)
         return float(max(a, 1 - a))
 
     def _model(self) -> Any:
@@ -98,6 +113,15 @@ class _Scorer:
 
         self.name = "sklearn"
         return HistGradientBoostingClassifier(max_iter=100)
+
+
+def _looks_like_dates(s: pd.Series) -> bool:
+    import warnings
+
+    sample = s.dropna().astype(str).head(20)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return len(sample) > 0 and pd.to_datetime(sample, errors="coerce").notna().mean() > 0.9
 
 
 class Auditor:
@@ -153,13 +177,13 @@ class Auditor:
             shift = max(shift, float(dist or 0.0))
         return float(min(1.0, shift))
 
-    def _label_power(self, spec: Spec, train: pd.DataFrame, col: str) -> float | None:
+    def _label_power(self, spec: Spec, train: pd.DataFrame, col: str) -> tuple[float, float] | None:
         ent = self.schema.tables[spec.entity]
         if spec.task_type != "binary_classification" or train.empty:
             return None
         values = self.schema.con.execute(f'SELECT "{ent.pkey}" AS k, "{col}" AS x FROM "{spec.entity}"').df()
         df = train.merge(values, left_on=spec.entity_key, right_on="k", how="left")
-        return self.scorer.auc(df["x"], df["target"])
+        return self.scorer.auc(df["x"], df["target"], df["timestamp"])
 
     # ------------------------------------------------------------------ run
     def run(self, spec: Spec, train: pd.DataFrame) -> list[ColumnAudit]:
@@ -175,10 +199,12 @@ class Auditor:
                     raw = self._age_shift(name, col)
                     kind, ev = "newest rows differ", raw
                 elif role == "entity":
-                    auc = self._label_power(spec, train, col)
-                    if auc is not None:
-                        kind, raw = f"predicts the label alone ({self.scorer.name})", auc
-                        ev = float(np.clip((auc - 0.75) / 0.2, 0, 1))
+                    aucs = self._label_power(spec, train, col)
+                    if aucs is not None:
+                        auc, base = aucs
+                        kind, raw = f"AUC with the anchor time vs {base:.2f} without the column ({self.scorer.name})", auc
+                        # Suspicious when the column alone is strong and adds a lot over the time of year.
+                        ev = float(np.clip((auc - 0.75) / 0.15, 0, 1) * np.clip((auc - base) / 0.1, 0, 1))
                 out.append(self._decide(name, col, role, prior, ev, kind, raw))
         return out
 

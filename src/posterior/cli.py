@@ -75,7 +75,13 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--port", type=int, default=8788)
 
     args = p.parse_args(argv)
+    import contextlib
+
     from .engine import Posterior
+
+    out = sys.stdout
+    # Libraries print progress to stdout; keep it for the answer (and valid JSON).
+    quiet = contextlib.redirect_stdout(sys.stderr)
 
     if args.cmd == "serve":
         from .api import serve
@@ -88,7 +94,8 @@ def main(argv: list[str] | None = None) -> int:
         run(args.db, model=args.model, backend=args.backend, runs=args.runs, http=args.http, port=args.port)
         return 0
 
-    post = Posterior.connect(args.db, model=args.model, work_root=args.runs, backend=args.backend)
+    with quiet:
+        post = Posterior.connect(args.db, model=args.model, work_root=args.runs, backend=args.backend)
     if args.cmd == "schema":
         for t in post.schema.tables.values():
             print(f"{t.name}: key={t.pkey} time={t.time_col} links={t.fkeys}"
@@ -96,7 +103,8 @@ def main(argv: list[str] | None = None) -> int:
         print("\nentities:", ", ".join(post.schema.entity_candidates()))
         return 0
     if args.cmd == "formulate":
-        fm, clar, (val, test) = post.formulate(args.question)
+        with contextlib.redirect_stdout(sys.stderr):
+            fm, clar, (val, test) = post.formulate(args.question)
         from .engine import Result
 
         d = Result(args.question, "formulated", fm.readings, 0, clar,
@@ -104,10 +112,12 @@ def main(argv: list[str] | None = None) -> int:
         d.pop("audit")
         print(json.dumps(d, indent=2, default=str)) if args.json else _print_result(d, 0)
         return 0
-    res = post.ask(args.question, reading=args.reading, live=not args.no_live, auto=not args.strict,
-                   run_model=not args.no_model)
+    with contextlib.redirect_stdout(sys.stderr):
+        res = post.ask(args.question, reading=args.reading, live=not args.no_live, auto=not args.strict,
+                       run_model=not args.no_model)
     d = res.to_dict(max_predictions=max(args.top, 50))
-    print(json.dumps(d, indent=2, default=str)) if args.json else _print_result(d, args.top)
+    with contextlib.redirect_stdout(out):
+        print(json.dumps(d, indent=2, default=str)) if args.json else _print_result(d, args.top)
     return 0
 
 

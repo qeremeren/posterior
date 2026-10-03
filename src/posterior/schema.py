@@ -153,12 +153,20 @@ class Schema:
         return Table(name, source, n_rows, cols)
 
     def _find_keys(self) -> None:
+        def stem(name: str) -> str:
+            return (name[:-1] if name.endswith("s") else name).lower()
+
         for t in self.tables.values():
+            singular = t.name[:-1] if t.name.endswith("s") else t.name
+            # A column named after another table (order_id in order_items) points at that table's key,
+            # even when it happens to be unique here (one item per order).
+            foreign = {f"{stem(o)}_id" for o in self.tables if o != t.name} | {f"{o.lower()}_id" for o in self.tables if o != t.name}
+            foreign -= {f"{singular.lower()}_id", f"{t.name.lower()}_id"}
             unique = [c for c in t.columns.values()
-                      if c.n_distinct == t.n_rows and c.null_frac == 0 and c.kind in ("id", "numeric", "categorical")]
+                      if c.n_distinct == t.n_rows and c.null_frac == 0 and c.kind in ("id", "numeric", "categorical")
+                      and c.name.lower() not in foreign]
             if not unique:
                 continue
-            singular = t.name[:-1] if t.name.endswith("s") else t.name
 
             def rank(c: Column) -> tuple[int, int]:
                 n = c.name.lower()
