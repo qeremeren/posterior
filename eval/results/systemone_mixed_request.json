@@ -1,0 +1,1 @@
+{"model":"posterior/winnow:e4b","answers":{"churn":{"type":"noul","noul":0.7169},"upset":{"type":"noul","noul":0.983}},"usage":{"input_tokens":0,"output_tokens":0}}

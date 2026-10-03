@@ -171,3 +171,16 @@ def test_materialize_writes_relarena_database(market, churn_decider, tmp_path):
     assert (tmp_path / "data" / "order_items.parquet").exists()
     back = pd.read_parquet(tmp_path / "data" / "order_items.parquet")
     assert "order_purchase_timestamp" in back.columns
+
+
+def test_threshold_lookback_and_shortlist():
+    from posterior.formulate import parse_lookback, parse_threshold, shortlist
+
+    assert parse_threshold("Predict whether a user will ignore more than 2 event invitations") == 2.0
+    assert parse_threshold("at least three orders") == 2.0
+    assert parse_threshold("Which sellers will stop selling?") is None
+    assert parse_lookback("if they have already attended an event in the last 14 days") == 14
+    assert parse_lookback("in the next 7 days") is None
+    opts = {f"c_{i}": f"c_{i}" for i in range(100)} | {"price": "price of the item"}
+    short = shortlist(opts, "What is the total price per seller?", k=40)
+    assert len(short) == 40 and "price" in short

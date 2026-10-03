@@ -1,0 +1,489 @@
+{
+  "question": "Which sellers will stop selling in the next 30 days?",
+  "status": "done",
+  "readings": [
+    {
+      "index": 0,
+      "probability": 0.5695,
+      "entity": "sellers",
+      "entity_key": "seller_id",
+      "event": "order_items",
+      "link": "seller_id",
+      "time_col": "order_purchase_timestamp",
+      "op": "not_exists",
+      "horizon_days": 30,
+      "population": "recent",
+      "value": null,
+      "filter": null,
+      "threshold": null,
+      "lookback_days": null,
+      "prob": 0.5695003781112069,
+      "slot_probs": {
+        "entity": 0.9779,
+        "event": 1.0,
+        "op": 0.6451150999999999,
+        "value": 1.0,
+        "filter": 1.0,
+        "horizon": 1.0,
+        "population": 0.8309536465491922
+      },
+      "task_type": "binary_classification",
+      "description": "For each sellers row with a order_items event in the last 30 days: no order_items event in the next 30 days"
+    },
+    {
+      "index": 1,
+      "probability": 0.2008,
+      "entity": "sellers",
+      "entity_key": "seller_id",
+      "event": "order_items",
+      "link": "seller_id",
+      "time_col": "order_purchase_timestamp",
+      "op": "count",
+      "horizon_days": 30,
+      "population": "recent",
+      "value": null,
+      "filter": null,
+      "threshold": null,
+      "lookback_days": null,
+      "prob": 0.20081915114349172,
+      "slot_probs": {
+        "entity": 0.9779,
+        "event": 1.0,
+        "op": 0.23973057,
+        "value": 1.0,
+        "filter": 1.0,
+        "horizon": 1.0,
+        "population": 0.7885
+      },
+      "task_type": "regression",
+      "description": "For each sellers row with a order_items event in the last 30 days: the number of order_items events in the next 30 days"
+    },
+    {
+      "index": 2,
+      "probability": 0.1159,
+      "entity": "sellers",
+      "entity_key": "seller_id",
+      "event": "order_items",
+      "link": "seller_id",
+      "time_col": "order_purchase_timestamp",
+      "op": "not_exists",
+      "horizon_days": 30,
+      "population": "all",
+      "value": null,
+      "filter": null,
+      "threshold": null,
+      "lookback_days": null,
+      "prob": 0.11585719926539419,
+      "slot_probs": {
+        "entity": 0.9779,
+        "event": 1.0,
+        "op": 0.6451150999999999,
+        "value": 1.0,
+        "filter": 1.0,
+        "horizon": 1.0,
+        "population": 0.16904635345080768
+      },
+      "task_type": "binary_classification",
+      "description": "For every row of sellers: no order_items event in the next 30 days"
+    },
+    {
+      "index": 3,
+      "probability": 0.0724,
+      "entity": "sellers",
+      "entity_key": "seller_id",
+      "event": "order_items",
+      "link": "seller_id",
+      "time_col": "order_purchase_timestamp",
+      "op": "exists",
+      "horizon_days": 30,
+      "population": "recent",
+      "value": null,
+      "filter": null,
+      "threshold": null,
+      "lookback_days": null,
+      "prob": 0.07237347283153704,
+      "slot_probs": {
+        "entity": 0.9779,
+        "event": 1.0,
+        "op": 0.08218489999999999,
+        "value": 1.0,
+        "filter": 1.0,
+        "horizon": 1.0,
+        "population": 0.8289099833718659
+      },
+      "task_type": "binary_classification",
+      "description": "For each sellers row with a order_items event in the last 30 days: at least one order_items event in the next 30 days"
+    },
+    {
+      "index": 4,
+      "probability": 0.0414,
+      "entity": "sellers",
+      "entity_key": "seller_id",
+      "event": "order_items",
+      "link": "seller_id",
+      "time_col": "order_purchase_timestamp",
+      "op": "count",
+      "horizon_days": 30,
+      "population": "all",
+      "value": null,
+      "filter": null,
+      "threshold": null,
+      "lookback_days": null,
+      "prob": 0.04144979864837023,
+      "slot_probs": {
+        "entity": 0.9779,
+        "event": 1.0,
+        "op": 0.23973057,
+        "value": 1.0,
+        "filter": 1.0,
+        "horizon": 1.0,
+        "population": 0.16274925
+      },
+      "task_type": "regression",
+      "description": "For every row of sellers: the number of order_items events in the next 30 days"
+    }
+  ],
+  "chosen": 0,
+  "clarification": null,
+  "splits": {
+    "val": "2018-07-02T00:00:00",
+    "test": "2018-08-01T00:00:00"
+  },
+  "audit": {
+    "dropped": [
+      {
+        "table": "order_reviews",
+        "column": "review_comment_title",
+        "role": "event",
+        "meaning": 0.4297,
+        "evidence": 0.3155,
+        "evidence_kind": "newest rows differ",
+        "evidence_value": 0.3155,
+        "score": 0.6096,
+        "verdict": "drop",
+        "reason": "meaning: updated later with p=0.43; newest rows differ: 0.32"
+      },
+      {
+        "table": "orders",
+        "column": "order_status",
+        "role": "event",
+        "meaning": 0.8,
+        "evidence": 0.0172,
+        "evidence_kind": "newest rows differ",
+        "evidence_value": 0.0172,
+        "score": 0.8034,
+        "verdict": "drop",
+        "reason": "meaning: updated later with p=0.80; newest rows differ: 0.02"
+      },
+      {
+        "table": "orders",
+        "column": "order_delivered_carrier_date",
+        "role": "event",
+        "meaning": 0.8183,
+        "evidence": 0.0218,
+        "evidence_kind": "newest rows differ",
+        "evidence_value": 0.0218,
+        "score": 0.8223,
+        "verdict": "drop",
+        "reason": "meaning: updated later with p=0.82; newest rows differ: 0.02"
+      },
+      {
+        "table": "orders",
+        "column": "order_delivered_customer_date",
+        "role": "event",
+        "meaning": 0.8203,
+        "evidence": 0.0061,
+        "evidence_kind": "newest rows differ",
+        "evidence_value": 0.0061,
+        "score": 0.8214,
+        "verdict": "drop",
+        "reason": "meaning: updated later with p=0.82; newest rows differ: 0.01"
+      }
+    ],
+    "kept": 25
+  },
+  "backtest": {
+    "backend": "client",
+    "task_type": "binary_classification",
+    "metrics": {
+      "positive_rate": 0.2767145135566188,
+      "brier": 0.16183640734188606,
+      "roc_auc": 0.7796517003517311
+    },
+    "baselines": {
+      "constant_global": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.20019964265952436,
+        "roc_auc": 0.5
+      },
+      "constant_per_entity": {
+        "positive_rate": 0.2767145135566188,
+        "brier": 0.21556800656528452,
+        "roc_auc": 0.6698095822119983
+      }
+    },
+    "test_rows": 1254,
+    "test_timestamp": "2018-08-01 00:00:00",
+    "seconds": 146.1,
+    "notes": []
+  },
+  "predictions": [
+    {
+      "seller_id": "56db5c0782e8f7ddc9343f9576ff6d16",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.8338997364
+    },
+    {
+      "seller_id": "2f73e04d12cdf0c945ded66bb3fcf6c7",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.8003799319
+    },
+    {
+      "seller_id": "612a743d294c27884fb7b80d2b19ba35",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7891361117
+    },
+    {
+      "seller_id": "262237171f48e85819065498cac80d7b",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7836390734
+    },
+    {
+      "seller_id": "cd843d4cf8ef32827de0396605163ba3",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.77543962
+    },
+    {
+      "seller_id": "02d35243ea2e497335cd0f076b45675d",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7634381652
+    },
+    {
+      "seller_id": "cf2384dd2f1dddea3f838efed0945e65",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7602130175
+    },
+    {
+      "seller_id": "12c2ed9cded6138cf0c75f525f565fc7",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7504160404
+    },
+    {
+      "seller_id": "8de8fe3af4449ed695d2434c933ed73e",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7484151125
+    },
+    {
+      "seller_id": "9dd459b29a14bf89d47183cf2cd0e4c7",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.742200017
+    },
+    {
+      "seller_id": "5236605f4d4b0b3e4df85b850393fca0",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7324307561
+    },
+    {
+      "seller_id": "5415337f1863452476d42d9f14a16a61",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7316055298
+    },
+    {
+      "seller_id": "07e8e8fc5222bb358e6f259da3197074",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.726913631
+    },
+    {
+      "seller_id": "8a1ff5c35f6595a73fef4c7b96e4908a",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7233344913
+    },
+    {
+      "seller_id": "58b98ccb79873e04eac4357cacc590d9",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7168849707
+    },
+    {
+      "seller_id": "05aebce0b5c8f0d41b29b686f2d05fd3",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7165688872
+    },
+    {
+      "seller_id": "a3082f442524a1be452e3189e003b361",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7157375813
+    },
+    {
+      "seller_id": "c004e5ea15737026cecaee0447e00b75",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7134530544
+    },
+    {
+      "seller_id": "fdf736c18c589ed030e058312203e1b2",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7129711509
+    },
+    {
+      "seller_id": "fcf16b7a8697e559f0123190bb30177d",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7110702991
+    },
+    {
+      "seller_id": "04843805947f0fc584fc1969b6e50fe7",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.710672617
+    },
+    {
+      "seller_id": "19484c79cef6c062cb177aa4ef2fcc3c",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7092304826
+    },
+    {
+      "seller_id": "35b96509602ec4b7da831b5cd73ff2c2",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.706994772
+    },
+    {
+      "seller_id": "6c12e40690c335dbc2f68a4134d30dc1",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7067306042
+    },
+    {
+      "seller_id": "f3975e8a41157005d4bcbb358678cd9b",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7011737823
+    },
+    {
+      "seller_id": "f8201cab383e484733266d1906e2fdfa",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7007625103
+    },
+    {
+      "seller_id": "c3f5668699a1b04c0fa61ecea1e2bff6",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.7007473707
+    },
+    {
+      "seller_id": "c1f12f926d0ba950578b4fa41115cbb6",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6998867393
+    },
+    {
+      "seller_id": "c89cf7c468a48af70aada384e722f9e2",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6994190216
+    },
+    {
+      "seller_id": "83645b1645cdee8953ee54c29ceed564",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6955426931
+    },
+    {
+      "seller_id": "296729ffb9b684050dd24836dac4494a",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6934606433
+    },
+    {
+      "seller_id": "1b0b0f4f95e962d6f32fe90c759d0479",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6923011541
+    },
+    {
+      "seller_id": "ec4608a1f76453166bb312b2968aeaf4",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6897153854
+    },
+    {
+      "seller_id": "eec3469d83e142f9a104886655338c37",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6861152053
+    },
+    {
+      "seller_id": "70c0fda4c313d87115644d39e62eec60",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6858519912
+    },
+    {
+      "seller_id": "c52c644cc0dc85121207a27013efc6af",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6792043447
+    },
+    {
+      "seller_id": "4f1f1c8666cdb6442f775c4e8caed465",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6782980561
+    },
+    {
+      "seller_id": "8c351ed7c326c62123318f4f3246e906",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6778975129
+    },
+    {
+      "seller_id": "5b33b527da3c5b969cc99dc435cad09a",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6776514053
+    },
+    {
+      "seller_id": "062c325cd6a2b87845fab56b4ec2eeae",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6766540408
+    },
+    {
+      "seller_id": "9140ef75cc8211c4035935e80e567204",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6764306426
+    },
+    {
+      "seller_id": "4125d9385a25e82d2f72d3a0fd55bc3f",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6763907671
+    },
+    {
+      "seller_id": "7402d13c03a7e91366337cd1de471144",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6730560064
+    },
+    {
+      "seller_id": "6a53b90c3ad9e0b56d9fe5c69165fff5",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6726487875
+    },
+    {
+      "seller_id": "c8025364abeecb115431bf95c11a747f",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6684762836
+    },
+    {
+      "seller_id": "4091f77d8c768fc3e81c20761471761d",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6650592685
+    },
+    {
+      "seller_id": "46ef1a25845fc051c2998d878354810c",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6647732258
+    },
+    {
+      "seller_id": "82921991ff5b557b045605b8bbf08d49",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6641659737
+    },
+    {
+      "seller_id": "1927cdb9fa74f5270097f6250e8e8f34",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6635552645
+    },
+    {
+      "seller_id": "1c5e4e49b9079480255b49d50aac1aa9",
+      "timestamp": "2018-08-31T00:00:00.000",
+      "prediction": 0.6622101068
+    }
+  ],
+  "n_predictions": 1278,
+  "files": {
+    "task": "runs/sellers-not_exists-30d-9a554874cb/task.yaml",
+    "database": "runs/sellers-not_exists-30d-9a554874cb/db.yaml",
+    "predictions": "runs/sellers-not_exists-30d-9a554874cb/predictions.parquet"
+  },
+  "seconds": 227.8
+}

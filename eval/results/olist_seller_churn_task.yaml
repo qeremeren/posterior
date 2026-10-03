@@ -1,0 +1,17 @@
+database: db.yaml
+entity_table: sellers
+entity_col: seller_id
+time_col: timestamp
+target_col: target
+task_type: binary_classification
+timedelta: 30 days
+num_eval_timestamps: 1
+val_timestamp: '2018-07-02 00:00:00'
+test_timestamp: '2018-08-01 00:00:00'
+query: 'SELECT t.timestamp AS timestamp, x."seller_id" AS "seller_id", CAST(NOT EXISTS (SELECT 1 FROM "order_items" e WHERE e."seller_id" = x."seller_id" AND e."order_purchase_timestamp" > t.timestamp AND e."order_purchase_timestamp" <= t.timestamp + INTERVAL ''{timedelta}'') AS INTEGER) AS target
+
+  FROM timestamp_df t, "sellers" x
+
+  WHERE EXISTS (SELECT 1 FROM "order_items" e WHERE e."seller_id" = x."seller_id" AND e."order_purchase_timestamp" > t.timestamp - INTERVAL ''{timedelta}'' AND e."order_purchase_timestamp" <= t.timestamp)
+
+  '

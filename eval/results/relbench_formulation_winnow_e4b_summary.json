@@ -1,0 +1,15 @@
+{
+  "model": "winnow:e4b",
+  "tasks": 11,
+  "entity_accuracy": 0.818,
+  "type_accuracy": 1.0,
+  "horizon_accuracy": 1.0,
+  "mean_top1_agreement": 0.236,
+  "mean_with_clarification": 0.336,
+  "mean_best_of_k": 0.353,
+  "clarification_rate": 0.818,
+  "expressible_tasks": 5,
+  "expressible_top1_agreement": 0.455,
+  "expressible_with_clarification": 0.666,
+  "expressible_best_of_k": 0.666
+}

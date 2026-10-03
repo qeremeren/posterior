@@ -10,18 +10,18 @@ Readings
     0.20  For each sellers row with a order_items event in the last 30 days: the number of order_items events ...
     0.12  For every row of sellers: no order_items event in the next 30 days
 
-Leakage audit: kept 23 columns, dropped 5
-    - orders.order_status: meaning: updated later with p=0.79
-    - orders.order_delivered_customer_date: meaning: updated later with p=0.84
+Leakage audit: kept 25 columns, dropped 4
+    - orders.order_status: meaning: updated later with p=0.78
+    - orders.order_delivered_customer_date: meaning: updated later with p=0.83
     ...
 
 Backtest (client, 1254 rows at 2018-08-01 00:00:00)
-    model               roc_auc=0.787  brier=0.160
+    model               roc_auc=0.780  brier=0.162
     constant_global     roc_auc=0.500  brier=0.200
     constant_per_entity roc_auc=0.670  brier=0.216
 
 Predictions (top 3 of 1278)
-    seller_id=58b98ccb79873e04eac4357cacc590d9  prediction=0.934
+    seller_id=56db5c0782e8f7ddc9343f9576ff6d16  prediction=0.834
     ...
 ```
 
@@ -96,10 +96,15 @@ All numbers come from runs in this repository. The decision model is `winnow:e4b
 
 | | ROC-AUC | Brier |
 |---|---|---|
-| Posterior, from one sentence (automatic splits, test cutoff 2018-08-01) | **0.787** | 0.160 |
+| Posterior, from one sentence, with the audit (automatic splits, test cutoff 2018-08-01) | **0.780** | 0.162 |
+| Same reading, every column kept | 0.787 | 0.160 |
 | Constant (global) | 0.500 | 0.200 |
 | Constant (per seller) | 0.670 | 0.216 |
 | Prior Labs' hand-written TabPFN-Rel task, our rerun (their splits, test cutoff 2018-06-15) | 0.776 | |
+
+Keeping the post-purchase order columns adds 0.007 AUC on paper. That small edge is the leak the audit
+removes. One run takes about 2.5 minutes: two TabPFN-Rel fits, one for the backtest and one for the live
+forecast.
 
 The compiled label SQL is checked against Prior Labs' hand-written query for this task. On six anchors
 it produces the same label for all 6,136 (anchor, seller) rows.
@@ -122,7 +127,7 @@ included):
 | TabPFN-3.5 on the leaky database | ROC-AUC | Brier |
 |---|---|---|
 | No audit | **1.000** | 0.0002 |
-| With the audit | LEAK_WITH_AUDIT | |
+| With the audit | **0.774** | 0.166 |
 
 Without the audit, the model looks perfect because it reads the future.
 
@@ -132,7 +137,27 @@ Without the audit, the model looks perfect because it reads the future.
 - **Gold:** Prior Labs' hand-written RelArena task files.
 - **Metric:** label agreement on four shared anchors, defined as the share of (anchor, entity) pairs that both sides produce times the share of those pairs with the same label.
 
-RELBENCH_TABLE
+| Task | Grammar states it exactly | Entity | Answer type | Window | Top reading | With one clarification |
+|---|---|---|---|---|---|---|
+| `rel-event/user-attendance` | no | yes | yes | yes | 0.05 | 0.05 |
+| `rel-event/user-ignore` | yes | yes | yes | yes | 0.00 | 0.06 |
+| `rel-event/user-repeat` | no | yes | yes | yes | 0.04 | 0.06 |
+| `rel-f1/driver-dnf` | no | yes | yes | yes | 0.24 | 0.24 |
+| `rel-f1/driver-position` | yes | yes | yes | yes | 0.27 | 0.27 |
+| `rel-f1/driver-top3` | yes | yes | yes | yes | 0.00 | 1.00 |
+| `rel-hm/item-sales` | yes | yes | yes | yes | 1.00 | 1.00 |
+| `rel-hm/user-churn` | yes | yes | yes | yes | 1.00 | 1.00 |
+| `rel-trial/site-success` | no | no | yes | yes | 0.00 | 0.02 |
+| `rel-trial/study-adverse` | no | no | yes | yes | 0.00 | 0.00 |
+| `rel-trial/study-outcome` | no | yes | yes | yes | 0.00 | 0.01 |
+| **All 11** | 5 | **82%** | **100%** | **100%** | 0.24 | 0.34 |
+| **The 5 the grammar states** | | | | | 0.46 | **0.67** |
+
+The decision model reads the answer type and the window correctly on all 11 tasks and the entity on 9.
+Both H&M tasks come out exactly right on the first reading. F1 top-3 comes out exactly right after one
+clarification. `rel-amazon`, `rel-stack` and `rel-avito` were not run: their tables do not fit
+comfortably in the 16 GB of the machine used.
+Re-run: `python eval/relbench_formulation.py --data ~/data/relbench`.
 
 The grammar states 5 of these 11 tasks exactly. The others need features it does not have yet:
 - a union of tables,
@@ -152,7 +177,7 @@ Requirements:
 ```sh
 uv sync --extra api --extra serve          # hosted TabPFN; use --extra local for a GPU
 ./scripts/get_olist.sh data/olist          # public mirror of the Olist tables
-echo "TABPFN_TOKEN=..." > ~/.config/posterior/env
+mkdir -p ~/.config/posterior && echo "TABPFN_TOKEN=..." > ~/.config/posterior/env
 
 posterior schema    --db data/olist
 posterior formulate --db data/olist "Which sellers will stop selling in the next 30 days?"
@@ -179,7 +204,9 @@ posterior serve --db data/olist --port 8787
 - A yes/no question about the future of an entity named in `state` is answered by TabPFN from the database's own history.
 - Every other question passes through to the decision model.
 
-Existing Jev integrations can point at Posterior unchanged:
+Existing Jev integrations can point at Posterior unchanged. In the real run below, the first question
+was answered by TabPFN (the seller's live forecast, 0.717) and the second by the decision model (0.983),
+in one request:
 
 ```sh
 curl localhost:8787/v1/systemone -H 'content-type: application/json' -d '{
@@ -218,7 +245,7 @@ Prior Labs' MCP server expects a ready DataFrame. Posterior's expects a question
 ## Reproduce
 
 ```sh
-uv run pytest                                              # 23 offline tests, no model server needed
+uv run pytest                                              # 24 offline tests, no model server needed
 python eval/leakage.py --olist data/olist --fit            # leakage table
 python eval/relbench_formulation.py --data ~/data/relbench # RelBench table (tables via relbench)
 python scripts/mcp_smoke.py data/olist                     # MCP over stdio

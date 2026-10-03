@@ -86,22 +86,23 @@ question + database
 
 ### Day 1 (4 Oct)
 - [x] Private repo, README, plan
-- [ ] white (RTX 3090): uv, Ollaya with `winnow:e4b` + `clef`, `tabpfn-rel[local]`
-- [ ] Data: RelBench `rel-f1` materialized (no auth), Olist if Kaggle credentials are available
-- [ ] `decider.py` + `schema.py` (profile, keys, time columns, `db.yaml`)
-- [ ] `spec.py` + `compile.py` reproduce the gold `rel-f1` and Olist label SQL by hand-built specs
+- [x] white (RTX 3090): uv, Ollaya with `winnow:e4b` + `clef`, `tabpfn-rel[local]` (local weights wait for the license; hosted API used)
+- [x] Data: RelBench f1, event, hm, trial materialized; Olist from a public Hugging Face mirror
+- [x] `decider.py` + `schema.py` (profile, keys, time columns, `db.yaml`)
+- [x] `spec.py` reproduces the gold Olist label SQL exactly (6136/6136)
 
 ### Day 2 (5 Oct)
-- [ ] `formulate.py`: question to top-k specs on rel-f1 and Olist
-- [ ] `learn.py`: TabPFN-Rel local fit, predict, backtest
-- [ ] `audit.py` with leak injection experiment
-- [ ] `clarify.py`
-- [ ] Formulation eval over RelBench v1 tasks (as many datasets as fit on disk and time)
+- [x] `formulate.py`: question to top-k specs
+- [x] `learn.py`: TabPFN-Rel fit, predict, backtest, live refit
+- [x] `audit.py` with leak injection experiment (4/4, AUC 1.000 to 0.774)
+- [x] `clarify.py`
+- [x] Formulation eval over 11 RelBench tasks (f1, event, hm, trial)
 
 ### Day 3 (6 Oct)
-- [ ] `api.py` (`/v1/ask`, `/v1/systemone`), `mcp.py`, `cli.py`
-- [ ] README results tables, reproduction commands, demo video
-- [ ] Make repo public, submit by ~20:00 CEST, keep updating until close
+- [x] `api.py` (`/v1/ask`, `/v1/systemone`), `mcp_server.py`, `cli.py`, 24 tests
+- [x] README results tables and reproduction commands
+- [ ] Demo video
+- [ ] Make repo public, submit by ~20:00 CEST, keep updating until close (Mert)
 
 ### Stretch
 - Text probes on text columns (decision-model features with a placebo control)
@@ -110,7 +111,7 @@ question + database
 - Multi-model voting in formulation
 
 ## Needs from Mert
-- `TABPFN_TOKEN` (Prior Labs account, TabPFN-3.5 license accepted at ux.priorlabs.ai) for local weights
+- Accept the TabPFN-3.5 license at ux.priorlabs.ai (Licenses tab) so local GPU weights download; the token works for the hosted API already
 - Join the hackathon on platform.priorlabs.ai and request the extra API credits
 - Kaggle credentials (optional, only for Olist)
 
