@@ -21,7 +21,7 @@ dependencies = [
 # TabPFN-3.5 through TabPFN-Rel, run on a local GPU.
 local = ["tabpfn-rel[local]>=0.0.5"]
 api = ["tabpfn-rel[api]>=0.0.5"]
-serve = ["fastapi>=0.115", "uvicorn>=0.30", "mcp>=1.2"]
+serve = ["fastapi>=0.115", "uvicorn>=0.30", "mcp>=1.2,<2"]
 
 [project.scripts]
 posterior = "posterior.cli:main"
