@@ -10,3 +10,4 @@ runs/
 *.duckdb.wal
 .env
 .DS_Store
+cache/

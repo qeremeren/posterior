@@ -1,0 +1,36 @@
+[project]
+name = "posterior"
+version = "0.1.0"
+description = "Ask a database a question about the future. Decision models make the judgment calls, TabPFN-3.5 does the statistics."
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Mert Cobanov" }]
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "duckdb>=1.1",
+    "pandas>=2.2,<3.0",
+    "pyarrow>=16",
+    "numpy>=1.26",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pyyaml>=6",
+    "scikit-learn>=1.5",
+]
+
+[project.optional-dependencies]
+# TabPFN-3.5 through TabPFN-Rel, run on a local GPU.
+local = ["tabpfn-rel[local]>=0.0.5"]
+serve = ["fastapi>=0.115", "uvicorn>=0.30", "mcp>=1.2"]
+
+[project.scripts]
+posterior = "posterior.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/posterior"]
