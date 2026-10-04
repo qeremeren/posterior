@@ -103,7 +103,9 @@ All numbers come from runs in this repository. The decision model is `winnow:e4b
 | Prior Labs' hand-written TabPFN-Rel task, our rerun (their splits, test cutoff 2018-06-15) | 0.776 | |
 
 Keeping the post-purchase order columns adds 0.007 AUC on paper. That small edge is the leak the audit
-removes. One run takes about 2.5 minutes: two TabPFN-Rel fits, one for the backtest and one for the live
+removes. A rerun from a fresh clone scored 0.777 in 167 seconds. It dropped one more column, the
+estimated delivery date, whose meaning score sits near the 0.75 threshold, so results move between
+0.777 and 0.780 from run to run. One run takes about 2.5 minutes: two TabPFN-Rel fits, one for the backtest and one for the live
 forecast.
 
 The compiled label SQL is checked against Prior Labs' hand-written query for this task. On six anchors
