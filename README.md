@@ -130,6 +130,18 @@ uv run posterior ask       --db data/olist "Which sellers will stop selling in t
 the same question again reuses `runs/`; decision-model answers are cached in `cache/decisions.jsonl`.
 If Ollaya runs on another machine, set `POSTERIOR_DECIDER_URL=http://<host>:11435`.
 
+The RelBench evaluation reads four RelBench databases, downloaded from relbench.stanford.edu (no account):
+
+```sh
+uv run python -c "
+from pathlib import Path; from relbench.datasets import get_dataset
+for d in ['rel-f1', 'rel-event', 'rel-hm', 'rel-trial']:
+    out = Path('~/data/relbench').expanduser() / d; out.mkdir(parents=True, exist_ok=True)
+    for name, t in get_dataset(d, download=True).get_db(upto_test_timestamp=False).table_dict.items():
+        t.df.to_parquet(out / f'{name}.parquet', index=False)
+    (out / '.done').touch()"
+```
+
 The evaluations:
 
 ```sh
