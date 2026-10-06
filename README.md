@@ -100,7 +100,7 @@ count and lifetime revenue, all computed from the full history)
 | **Both** | **4 / 4** | **0** | **88%** |
 
 On the leaky database TabPFN-3.5 scores a perfect **1.000** without the audit (it reads the future) and an
-honest **0.774** with it. The data check in `eval/results/leakage.json` ran on the gradient-boosting fallback.
+honest **0.774** with it. The data check in `eval/results/leakage.json` ran on the gradient-boosting fallback. With TabPFN, the data-only check scored 4/4.
 
 **Formulation on 11 RelBench tasks**, from RelBench's own one-line task descriptions, scored against Prior
 Labs' hand-written RelArena task files: answer type and window right on 11/11, entity on 9/11. Both H&M
