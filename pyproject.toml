@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Ask a database a question about the future. Decision models make the judgment calls, TabPFN-3.5 does the statistics."
 readme = "README.md"
 license = "Apache-2.0"
-authors = [{ name = "Mert Cobanov" }]
+authors = [{ name = "Kerem Eren" }]
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "duckdb>=1.1",
