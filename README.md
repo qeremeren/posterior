@@ -214,7 +214,20 @@ claude mcp add posterior -e TABPFN_TOKEN=<your key> -- uv run --directory /path/
   the task cutoff.
 - `rel-amazon`, `rel-stack` and `rel-avito` were not run: their tables don't fit in 16 GB of RAM.
 
-## License
+## Data and license
 
-Apache 2.0. `eval/relbench_v1` holds task files from Prior Labs' RelArena (Apache 2.0, see its NOTICE).
-TabPFN-3.5 weights are under Prior Labs' license. The Olist data is CC BY-NC-SA 4.0 by Olist.
+The code is Apache 2.0. The data and weights it uses keep their own licenses:
+
+| Source | License | In this repository |
+|---|---|---|
+| [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce), v2 | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | No, downloaded to `data/olist` |
+| Task files from Prior Labs' [RelArena](https://github.com/PriorLabs/relarena) | Apache 2.0, see its NOTICE | `eval/relbench_v1` |
+| Task descriptions from [RelBench](https://github.com/stanford-star/relbench) | MIT | `eval/relbench_formulation.py` |
+| RelBench databases | Each source's own terms | No |
+| TabPFN-3.5 weights | Prior Labs' license | No |
+
+`scripts/get_olist.sh` reads the Olist tables from a
+[Hugging Face mirror](https://huggingface.co/datasets/bulutttt/olist-raw-data); on 2026-10-06 all eight files
+were byte-identical to the Kaggle download. The seller IDs and predictions in the example above and in
+`eval/results/olist_seller_churn_result.json` come from Olist, so they stay under CC BY-NC-SA 4.0
+(non-commercial use only).
