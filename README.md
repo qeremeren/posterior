@@ -2,270 +2,217 @@
 
 **Ask a database a question about the future. Get a calibrated answer, and see how the question was read.**
 
+Built for the [Prior Labs TabPFN-3.5 Hackathon](https://platform.priorlabs.ai/hackathon-3.5), October 2026.
+**Demo video (3:23):** [Predict the future with Posterior](https://www.youtube.com/watch?v=iodHvixfuaA)
+
 ```text
 $ posterior ask --db data/olist "Which sellers will stop selling in the next 30 days?"
 
 Readings
-  → 0.57  For each sellers row with a order_items event in the last 30 days: no order_items event in the next 30 days
-    0.20  For each sellers row with a order_items event in the last 30 days: the number of order_items events ...
+  → 0.56  For each sellers row with a order_items event in the last 30 days: no order_items event in the next 30 days
+    0.21  For each sellers row with a order_items event in the last 30 days: the number of order_items events in the next 30 days
     0.12  For every row of sellers: no order_items event in the next 30 days
 
 Leakage audit: kept 25 columns, dropped 4
-    - orders.order_status: meaning: updated later with p=0.78
-    - orders.order_delivered_customer_date: meaning: updated later with p=0.83
+    - orders.order_status: meaning: updated later with p=0.80; newest rows differ: 0.02
+    - orders.order_delivered_customer_date: meaning: updated later with p=0.85; newest rows differ: 0.01
     ...
 
 Backtest (client, 1254 rows at 2018-08-01 00:00:00)
-    model               roc_auc=0.780  brier=0.162
-    constant_global     roc_auc=0.500  brier=0.200
-    constant_per_entity roc_auc=0.670  brier=0.216
+    model     positive_rate=0.277  brier=0.162  roc_auc=0.779
+    constant_global positive_rate=0.277  brier=0.200  roc_auc=0.500
+    constant_per_entity positive_rate=0.277  brier=0.216  roc_auc=0.670
 
-Predictions (top 3 of 1278)
-    seller_id=56db5c0782e8f7ddc9343f9576ff6d16  prediction=0.834
+Predictions (top 10 of 1278)
+    seller_id=56db5c0782e8f7ddc9343f9576ff6d16  timestamp=2018-08-31T00:00:00.000  prediction=0.8337168694
     ...
+
+done in 279.1s
 ```
 
-From one English sentence, Posterior:
-- worked out that "stop selling" means *no order items for 30 days, among sellers active in the last 30 days*. This is exactly the task Prior Labs wrote by hand for this dataset.
-- dropped the order columns that are filled in after the purchase.
-- fitted TabPFN-3.5 in context.
-- scored every active seller.
+This is the run from the demo video, on an M5 MacBook.
+
+From that one sentence, Posterior:
+
+- read "stop selling" as *no order items for 30 days, among sellers active in the last 30 days*, which is
+  the task Prior Labs wrote by hand for this dataset;
+- dropped the order columns that are filled in after the purchase;
+- fitted TabPFN-3.5 in context and scored all 1,278 active sellers.
 
 No training loop, no feature engineering, no hand-written SQL.
 
-Built for the [Prior Labs TabPFN-3.5 Hackathon](https://platform.priorlabs.ai/hackathon-3.5), October 2026.
+## Why
 
-## The problem
+Turning a business question into a prediction takes a data scientist days to weeks: define the question,
+find and join the tables, remove the columns that leak the future, train, read the output.
+[TabPFN](https://github.com/PriorLabs/tabpfn) made training take seconds. The steps before it are still
+manual, and [Prior Labs' RelArena docs](https://github.com/PriorLabs/relarena/blob/main/docs/predictive-task.md)
+say so: *"What even is a predictive task over a relational database? How to answer this well remains an
+open problem."*
 
-Turning a business question into a prediction takes a data scientist days to weeks:
-
-1. **Define the question.** What counts as "stop selling"? Over which window? Which sellers are at risk?
-2. **Find and join the tables.** Work out which timestamp marks each event.
-3. **Remove leaking columns.** A `last_order_date` or a `status` updated after the outcome makes a model look perfect on paper.
-4. **Train a model.**
-5. **Read the output.**
-
-[TabPFN](https://github.com/PriorLabs/tabpfn) reduced step 4 to seconds. Steps 1 to 3 are still manual, and
-[Prior Labs' own RelArena docs](https://github.com/PriorLabs/relarena/blob/main/docs/predictive-task.md)
-say so:
-
-> "What even is a predictive task over a relational database? How to answer this well remains an open problem."
->
-> "Choosing a valid target and excluding fields unavailable at prediction time remain the user's responsibility."
-
-## The idea
-
-Steps 1 to 3 are made of small, typed judgment calls:
-
-| Judgment call | Type |
-|---|---|
-| Which table holds the sellers? | choice |
-| Does "stop selling" mean no orders, or a falling count? | choice |
-| Should only recently active sellers be scored? | yes / no |
-| Was `order_status` known at the moment of prediction? | yes / no |
-
-Jev-style **decision models** answer exactly this kind of question in milliseconds, with probabilities.
-Examples are TypeSafe's Jev and the open models served by [Ollaya](https://github.com/ollaya-dev/ollaya),
-such as Winnow, Clef, Kev and Laya. They cannot write SQL or do statistics. TabPFN does the statistics,
-but it never sees what a column means.
-
-Posterior runs both in one engine:
-
-- **Decision models make the data scientist's judgment calls.**
-- **TabPFN-3.5 does the statistics.**
-
-A small typed grammar turns the calls into a RelArena task, so no model ever writes SQL.
+Those steps are small, typed judgment calls (which table, which event, which window, was this column known
+then?). Decision models such as Winnow (served by [Ollaya](https://github.com/ollaya-dev/ollaya)) answer
+exactly that kind of question, with probabilities, but can't do statistics. TabPFN does the statistics but
+never sees what a column means. Posterior gives each the job it is good at, and a small typed grammar turns
+the decisions into a RelArena task, so no model ever writes SQL.
 
 ## How it works
 
 | Step | What happens | Who |
 |---|---|---|
-| **Profile** (`schema.py`) | Keys, links and event times are found from the data. The decision model is asked only when the data cannot settle it: which of several timestamps is the event, and whether a keyed table's timestamp marks row creation or a later snapshot. Child rows borrow their parent's event time (order items get the purchase time). | code, decision model |
-| **Formulate** (`formulate.py`) | The question is split into slots: entity, event, operation, value, filter, window, population. Each slot is one atomic typed question. A beam keeps the likely options, the grammar drops invalid combinations, and joint probabilities rank the readings. | decision model |
-| **Compile** (`spec.py`) | The best reading becomes RelArena label SQL and a `task.yaml`, deterministically. | code |
-| **Clarify** (`clarify.py`) | The top readings are run on the same past anchors. If they label the same entities the same way, nobody is asked. If they disagree, the user gets one multiple-choice question. | code |
-| **Audit** (`audit.py`) | Each column gets two kinds of evidence. Meaning comes from one batched decision-model call per table: "filled in or updated later?". Data checks are newest-row drift for event tables, and lift over the anchor time for the entity table, measured with TabPFN. Strong evidence of either kind decides alone; weaker evidence must agree. | decision model, TabPFN |
-| **Learn** (`learn.py`) | TabPFN-Rel replays history at many anchors and TabPFN-3.5 learns in context. Results are backtested against constant baselines, and a refit at the end of the data produces live predictions. | TabPFN-3.5 |
+| **Profile** (`schema.py`) | Find keys, links and event times. Ask only when the data can't settle it. | code, decision model |
+| **Formulate** (`formulate.py`) | Split the question into typed slots (entity, event, operation, filter, window, population) and rank the readings. | decision model |
+| **Compile** (`spec.py`) | Turn the best reading into RelArena label SQL and a `task.yaml`. | code |
+| **Clarify** (`clarify.py`) | Label past anchors with the top readings. If they disagree, ask the user one multiple-choice question. | code |
+| **Audit** (`audit.py`) | Per column: *meaning* (decision model: "filled in or updated later?") and *data* (newest-row drift for event tables; lift over the anchor time for the entity table). | decision model, TabPFN* |
+| **Learn** (`learn.py`) | TabPFN-Rel replays history at many anchors, TabPFN-3.5 learns in context; backtest against constant baselines, then refit for live predictions. | TabPFN-3.5 |
+
+\* The lift check uses TabPFN when `TABPFN_TOKEN` is exported in the shell, and gradient boosting
+otherwise (the key file alone is read too late for it).
 
 ## Results
 
-All numbers come from runs in this repository. The decision model is `winnow:e4b` on Ollaya
-(RTX 3090). TabPFN-3.5 runs through TabPFN-Rel on the Prior Labs API.
+All numbers come from runs in this repository. Decision model `winnow:e4b` on Ollaya; TabPFN-3.5 through
+TabPFN-Rel on the Prior Labs API.
 
-### End to end on Olist
+**End to end on Olist (seller churn, from one sentence)**
 
 | | ROC-AUC | Brier |
 |---|---|---|
-| Posterior, from one sentence, with the audit (automatic splits, test cutoff 2018-08-01) | **0.780** | 0.162 |
-| Same reading, every column kept | 0.787 | 0.160 |
+| Posterior, with the leakage audit (test cutoff 2018-08-01) | **0.777–0.780** | 0.162 |
+| Constant per seller (each seller's own history) | 0.670 | 0.216 |
 | Constant (global) | 0.500 | 0.200 |
-| Constant (per seller) | 0.670 | 0.216 |
-| Prior Labs' hand-written TabPFN-Rel task, our rerun (their splits, test cutoff 2018-06-15) | 0.776 | |
+| Prior Labs' hand-written TabPFN-Rel task, our rerun (their splits, cutoff 2018-06-15) | 0.776 | |
 
-Keeping the post-purchase order columns adds 0.007 AUC on paper. That small edge is the leak the audit
-removes. A rerun from a fresh clone scored 0.777 in 167 seconds. It dropped one more column, the
-estimated delivery date, whose meaning score sits near the 0.75 threshold, so results move between
-0.777 and 0.780 from run to run. One run takes about 2.5 minutes: two TabPFN-Rel fits, one for the backtest and one for the live
-forecast.
+- The compiled label SQL gives the same label as Prior Labs' hand-written query on all 6,136 (anchor, seller)
+  rows across six anchors.
+- Runs land between 0.777 and 0.780 because one column, the estimated delivery date, sits near the audit's
+  0.75 threshold. The demo-video run scored 0.779.
+- Keeping every column scores 0.787: that 0.007 is the leak the audit removes.
 
-The compiled label SQL is checked against Prior Labs' hand-written query for this task. On six anchors
-it produces the same label for all 6,136 (anchor, seller) rows.
+**Leakage audit, with four planted leaks** (`eval/leakage.py`: last order date, active status, lifetime item
+count and lifetime revenue, all computed from the full history)
 
-### Leakage audit, with four injected leaks
-
-`eval/leakage.py` adds four seller columns to Olist, all computed from the whole history (future
-included):
-- last order date,
-- active/inactive status,
-- lifetime item count,
-- lifetime revenue.
-
-| Audit | Injected leaks caught | Ordinary seller columns dropped | Agreement with Prior Labs' hand-curated Olist allow-list |
+| Audit | Planted leaks caught | Ordinary seller columns dropped | Agreement with Prior Labs' allow-list |
 |---|---|---|---|
-| Meaning only (decision model) | 3 / 4 | 0 | 84% |
-| Data only (TabPFN lift check) | 2 / 4 | 0 | 68% |
+| Meaning only | 3 / 4 | 0 | 84% |
+| Data only | 2 / 4 | 0 | 68% |
 | **Both** | **4 / 4** | **0** | **88%** |
 
-| TabPFN-3.5 on the leaky database | ROC-AUC | Brier |
-|---|---|---|
-| No audit | **1.000** | 0.0002 |
-| With the audit | **0.774** | 0.166 |
+On the leaky database TabPFN-3.5 scores a perfect **1.000** without the audit (it reads the future) and an
+honest **0.774** with it. The data check in `eval/results/leakage.json` ran on the gradient-boosting fallback.
 
-Without the audit, the model looks perfect because it reads the future.
+**Formulation on 11 RelBench tasks**, from RelBench's own one-line task descriptions, scored against Prior
+Labs' hand-written RelArena task files: answer type and window right on 11/11, entity on 9/11. Both H&M
+tasks are exact on the first reading, F1 top-3 is exact after one clarification, and the 5 tasks the grammar
+can state reach 0.67 mean label agreement. Per-task results: `eval/results/relbench_formulation_*.json`.
 
-### Formulation on RelBench, against Prior Labs' gold task files
+## Reproduce
 
-- **Input:** RelBench's own one-line task descriptions (the task class docstrings).
-- **Gold:** Prior Labs' hand-written RelArena task files.
-- **Metric:** label agreement on four shared anchors, defined as the share of (anchor, entity) pairs that both sides produce times the share of those pairs with the same label.
-
-| Task | Grammar states it exactly | Entity | Answer type | Window | Top reading | With one clarification |
-|---|---|---|---|---|---|---|
-| `rel-event/user-attendance` | no | yes | yes | yes | 0.05 | 0.05 |
-| `rel-event/user-ignore` | yes | yes | yes | yes | 0.00 | 0.06 |
-| `rel-event/user-repeat` | no | yes | yes | yes | 0.04 | 0.06 |
-| `rel-f1/driver-dnf` | no | yes | yes | yes | 0.24 | 0.24 |
-| `rel-f1/driver-position` | yes | yes | yes | yes | 0.27 | 0.27 |
-| `rel-f1/driver-top3` | yes | yes | yes | yes | 0.00 | 1.00 |
-| `rel-hm/item-sales` | yes | yes | yes | yes | 1.00 | 1.00 |
-| `rel-hm/user-churn` | yes | yes | yes | yes | 1.00 | 1.00 |
-| `rel-trial/site-success` | no | no | yes | yes | 0.00 | 0.02 |
-| `rel-trial/study-adverse` | no | no | yes | yes | 0.00 | 0.00 |
-| `rel-trial/study-outcome` | no | yes | yes | yes | 0.00 | 0.01 |
-| **All 11** | 5 | **82%** | **100%** | **100%** | 0.24 | 0.34 |
-| **The 5 the grammar states** | | | | | 0.46 | **0.67** |
-
-The decision model reads the answer type and the window correctly on all 11 tasks and the entity on 9.
-Both H&M tasks come out exactly right on the first reading. F1 top-3 comes out exactly right after one
-clarification. `rel-amazon`, `rel-stack` and `rel-avito` were not run: their tables do not fit
-comfortably in the 16 GB of the machine used.
-Re-run: `python eval/relbench_formulation.py --data ~/data/relbench`.
-
-The grammar states 5 of these 11 tasks exactly. The others need features it does not have yet:
-- a union of tables,
-- a window function over earlier anchors,
-- a set filter such as `status IN ('yes', 'maybe')`,
-- a value joined from another table,
-- a two-hop link.
-
-## Quick start
-
-Requirements:
-- Python 3.11 or 3.12.
-- A decision model behind `/v1/systemone`, for example Ollaya (`ollaya pull winnow:e4b`) or Jev.
-- A Prior Labs API key in `TABPFN_TOKEN`. For local GPU inference, accept the TabPFN-3.5 license at
-  ux.priorlabs.ai and set `POSTERIOR_TABPFN=local`.
+Tested on an Apple-silicon Mac (macOS 26) and on Linux with an RTX 3090.
 
 ```sh
-uv sync --extra api --extra serve          # hosted TabPFN; use --extra local for a GPU
-./scripts/get_olist.sh data/olist          # public mirror of the Olist tables
-mkdir -p ~/.config/posterior && echo "TABPFN_TOKEN=..." > ~/.config/posterior/env
+git clone https://github.com/qeremeren/posterior && cd posterior
+uv sync --extra api --extra serve            # Python 3.11 or 3.12; add --extra local for a GPU
+./scripts/get_olist.sh data/olist            # public mirror of the Olist tables, no Kaggle account
 
-posterior schema    --db data/olist
-posterior formulate --db data/olist "Which sellers will stop selling in the next 30 days?"
-posterior ask       --db data/olist "Which sellers will stop selling in the next 30 days?"
+curl -fsSL https://ollaya.dev/install.sh | sh   # decision model server: macOS 14+ on Apple silicon, or Linux
+ollaya pull winnow:e4b                          # 8 GB
+
+export TABPFN_TOKEN=<your key>               # from ux.priorlabs.ai
+
+uv run pytest                                # 24 offline tests, about 30 s, no models needed
+uv run posterior formulate --db data/olist "Which sellers will stop selling in the next 30 days?"
+uv run posterior ask       --db data/olist "Which sellers will stop selling in the next 30 days?"
 ```
+
+`ask` takes about 2.5 minutes with Ollaya on an RTX 3090 and about 5 minutes on an M5 MacBook. Asking
+the same question again reuses `runs/`; decision-model answers are cached in `cache/decisions.jsonl`.
+If Ollaya runs on another machine, set `POSTERIOR_DECIDER_URL=http://<host>:11435`.
+
+The evaluations:
+
+```sh
+uv run python eval/leakage.py --olist data/olist --fit              # leakage tables
+uv run python eval/relbench_formulation.py --data ~/data/relbench   # RelBench table
+uv run python scripts/mcp_smoke.py data/olist                       # MCP over stdio
+```
+
+## Use it from code, HTTP or an agent
 
 `--db` takes a folder of CSV or Parquet files, or a DuckDB file.
 
-### HTTP API
+**Python**
 
-```sh
-posterior serve --db data/olist --port 8787
+```python
+from posterior.engine import Posterior
+
+post = Posterior.connect("data/olist")
+res = post.ask("Which sellers will stop selling in the next 30 days?")
+res.learn["metrics"]["roc_auc"]   # backtest
+res.predictions.head()            # live predictions, highest first
 ```
 
-| Endpoint | What it does |
+**HTTP**, `uv run posterior serve --db data/olist --port 8787`:
+
+| Endpoint | |
 |---|---|
-| `POST /v1/formulate` | Readings and clarification. No model fit, fast. |
-| `POST /v1/ask` | The full answer: readings, audit, backtest, predictions. |
-| `POST /v1/tasks`, `GET /v1/tasks/{id}` | The same, run in the background. |
-| `POST /v1/systemone` (alias `/v1/decisions`) | TypeSafe/Jev wire format. See below. |
-| `GET /v1/schema`, `GET /health` | Inferred schema and status. |
+| `POST /v1/formulate` | Readings and clarification, no model fit |
+| `POST /v1/ask` | Readings, audit, backtest and predictions |
+| `POST /v1/tasks`, `GET /v1/tasks/{id}` | The same, in the background |
+| `POST /v1/systemone` (alias `/v1/decisions`) | Jev wire format |
+| `GET /v1/schema`, `GET /health` | Schema and status |
 
-`/v1/systemone` routes each question with the decision model:
-- A yes/no question about the future of an entity named in `state` is answered by TabPFN from the database's own history.
-- Every other question passes through to the decision model.
-
-Existing Jev integrations can point at Posterior unchanged. In the real run below, the first question
-was answered by TabPFN (the seller's live forecast, 0.717) and the second by the decision model (0.983),
-in one request:
+`/v1/systemone` speaks TypeSafe's Jev format, so existing Jev integrations can point at Posterior unchanged.
+A yes/no question about the future of an entity in `state` is answered by TabPFN from the database's
+history; every other question goes to the decision model. In the demo run, the request below returned
+`churn` 0.718 from TabPFN and `upset` 0.772 from the decision model:
 
 ```sh
-curl localhost:8787/v1/systemone -H 'content-type: application/json' -d '{
+curl -s localhost:8787/v1/systemone -H 'content-type: application/json' -d '{
   "model": "posterior",
   "state": {"seller_id": "58b98ccb79873e04eac4357cacc590d9", "note": "two late shipments this week"},
   "questions": {
-    "churn":  {"type": "noul", "instructions": "Will this seller stop selling in the next 30 days?"},
-    "upset":  {"type": "noul", "instructions": "Does the note sound like a complaint?"}}}'
+    "churn": {"type": "noul", "instructions": "Will this seller stop selling in the next 30 days?"},
+    "upset": {"type": "noul", "instructions": "Does the note sound like a complaint?"}}}' | python3 -m json.tool
 ```
 
-### MCP
+**MCP**, for Claude Code or any MCP client. Tools: `describe_database`, `formulate`, `ask`, `predict`,
+`audit`.
 
 ```sh
-claude mcp add posterior -- uv run --directory /path/to/posterior posterior mcp --db data/olist
+claude mcp add posterior -e TABPFN_TOKEN=<your key> -- uv run --directory /path/to/posterior posterior mcp --db data/olist
 ```
 
-| Tool | What it does |
-|---|---|
-| `describe_database` | Tables, keys, links and the entities that can be predicted for |
-| `formulate` | Readings and clarification |
-| `ask` | The full answer |
-| `predict` | Predictions for given entity ids |
-| `audit` | The leakage audit for a question |
-
-Prior Labs' MCP server expects a ready DataFrame. Posterior's expects a question.
-
-### Configuration
+**Configuration**
 
 | Variable | Default | |
 |---|---|---|
 | `POSTERIOR_DECIDER_URL` | `http://127.0.0.1:11435` | Any `/v1/systemone` endpoint (Ollaya, Jev, OpenRouter) |
 | `POSTERIOR_DECIDER_MODEL` | `winnow:e4b` | `a+b` averages two models |
-| `POSTERIOR_TABPFN` | `client` | `client` (Prior Labs API) or `local` (GPU) |
-| `TABPFN_TOKEN` | | Read from the environment or `~/.config/posterior/env` |
+| `POSTERIOR_TABPFN` | `client` | `client` (Prior Labs API) or `local` (GPU, needs the TabPFN-3.5 license) |
+| `TABPFN_TOKEN` | | Export it; `~/.config/posterior/env` also works for the fits |
 
-## Reproduce
+## What we learned
 
-```sh
-uv run pytest                                              # 24 offline tests, no model server needed
-python eval/leakage.py --olist data/olist --fit            # leakage table
-python eval/relbench_formulation.py --data ~/data/relbench # RelBench table (tables via relbench)
-python scripts/mcp_smoke.py data/olist                     # MCP over stdio
-```
-
-Decision-model answers are cached in `cache/decisions.jsonl`, so re-runs are free and deterministic.
-
-## What we learned about decision models
-
-- **Atomic questions beat loaded ones.** Splitting "what does the question predict?" into "yes/no or a number?" and then "stops or acts?" moved the stop-selling reading from second place to first.
-- **Less context is better for questions about wording.** For the polarity, population and filter questions, the decision model answered better from the question alone than from the question plus the schema. On eight labelled questions, the polarity question went from 0.37 to 0.89 for "stop selling".
-- **Data checks can confirm a leak but cannot clear a column.** The Olist export was taken after every order was delivered, so delivery dates are never empty on its newest rows. The meaning prior is what catches them.
+- **Ask decision models atomic questions, on the wording alone.** Splitting "what does it predict?" into
+  smaller choices, and leaving the schema out of questions about wording, moved "stop selling" from 0.37 to
+  0.89 and RelBench entity choice from 4/6 to 6/6.
+- **Data can confirm a leak but cannot clear a column.** Olist was exported after every delivery, so delivery
+  dates are never empty on the newest rows; only the meaning check catches them.
+- **Ask back instead of guessing.** "How much revenue will each product make next month?" has two readings
+  that agree on only 12% of labels, so Posterior asks one question instead of picking silently.
 
 ## Limitations
 
-- **Grammar coverage.** The grammar covers one entity with events one link away, single-value filters, and count thresholds. Unions, two-hop links, set filters and joined values are not supported yet.
-- **Phrasing sensitivity.** Small decision models are sensitive to phrasing. Ambiguous readings are surfaced as a clarification rather than hidden, but the top reading can still be wrong (RelBench `rel-event` is the weakest case).
-- **Live predictions.** They are made at the end of the dense part of the data. TabPFN-Rel freezes the database at the task cutoff.
+- **Grammar coverage:** one entity, events one link away, single-value filters and count thresholds. Unions,
+  two-hop links, set filters and joined values are not supported yet, which is why most `rel-event` and
+  `rel-trial` tasks score low.
+- **Phrasing sensitivity:** small decision models are sensitive to wording. Ambiguity is surfaced as a
+  clarification, but the top reading can still be wrong.
+- **Live predictions** are made at the end of the dense part of the data; TabPFN-Rel freezes the database at
+  the task cutoff.
+- `rel-amazon`, `rel-stack` and `rel-avito` were not run: their tables don't fit in 16 GB of RAM.
 
 ## License
 
